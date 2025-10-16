@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start"
+    "start": "next start",
+    "build:docs": "typedoc"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.18.0",
@@ -22,6 +23,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "tailwindcss": "^4",
+    "typedoc": "^0.28.14",
     "typescript": "^5"
   }
 }
