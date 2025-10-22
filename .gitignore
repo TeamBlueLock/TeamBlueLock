@@ -1,0 +1,28 @@
+cd "C:\Users\nnodi\Documents\CS Senior Project\TeamBlueLock"
+
+# If there's no root .gitignore yet, copy the inner one up:
+if (!(Test-Path .gitignore) -and (Test-Path .\teambluelock\.gitignore)) { Copy-Item .\teambluelock\.gitignore .\.gitignore }
+
+# Ensure these patterns exist at the ROOT .gitignore (append them safely):
+@'
+# Node / Next
+node_modules/
+.next/
+out/
+
+# Tests & reports
+coverage/
+playwright-report/
+test-results/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+'@ | Add-Content .gitignore
