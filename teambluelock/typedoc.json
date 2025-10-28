@@ -1,7 +1,7 @@
 {
   "entryPoints": ["src/app"],
   "entryPointStrategy": "expand",
-  "out": "docs",
+  "out": "../docs",
   "includeVersion": true,
   "excludePrivate": true,
   "excludeExternals": true,
