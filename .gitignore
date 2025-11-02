@@ -5,6 +5,10 @@ if (!(Test-Path .gitignore) -and (Test-Path .\teambluelock\.gitignore)) { Copy-I
 
 # Ensure these patterns exist at the ROOT .gitignore (append them safely):
 @'
+# Environment variables
+.env*
+!.env.example
+
 # Node / Next
 node_modules/
 .next/
