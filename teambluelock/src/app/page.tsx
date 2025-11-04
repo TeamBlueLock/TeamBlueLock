@@ -1,4 +1,6 @@
 import Image from "next/image";
+import EnvTest from '@/components/EnvTest'
+import DatabaseTest from '@/components/DatabaseTest'
 
 export default function Home() {
   return (
@@ -7,6 +9,8 @@ export default function Home() {
         <h1 className="text-5xl font-normal font-serif text-sky-600 tracking-wide drop-shadow-md">
           Team Blue Lock - Hello World!
         </h1>
+        <EnvTest />
+        <DatabaseTest />
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
       </footer>

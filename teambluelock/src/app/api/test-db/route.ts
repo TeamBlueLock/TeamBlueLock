@@ -31,8 +31,18 @@ export async function GET() {
   try {
     const db = await getDb();
     const result = await db.command({ ping: 1 });
-    return NextResponse.json({ ok: true, result });
+    return NextResponse.json({ 
+      ok: true, 
+      result,
+      message: 'Database connection successful',
+      timestamp: new Date().toISOString()
+    });
   } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
+    console.error('Database connection failed:', e.message);
+    return NextResponse.json({ 
+      ok: false, 
+      error: e.message,
+      message: 'Database connection failed'
+    }, { status: 500 });
   }
 }
