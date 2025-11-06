@@ -44,11 +44,6 @@ export default function RecipesPage() {
     <div className="space-y-6">
       <header>
         <h2 className="text-3xl text-sky-600 font-semibold">Recipes</h2>
-        <p className="mt-2 text-white-600 text-sm">
-          These are example “recipes” for views/reports you might build in your
-          small business dashboard. Click a box to see more details. All of this
-          is placeholder text for now.
-        </p>
       </header>
 
       <div>

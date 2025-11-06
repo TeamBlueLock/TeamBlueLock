@@ -80,10 +80,6 @@ export default function SupplyCostPage() {
     <div className="space-y-6">
       <header>
         <h2 className="text-4xl font-semibold text-sky-600 tracking-wide drop-shadow-md">Inventory</h2>
-        <p className="mt-2 text-white-600 text-sm">
-          Simple inventory view. Later you can hook this up to MongoDB instead
-          of hard-coded data.
-        </p>
       </header>
 
       <div>
