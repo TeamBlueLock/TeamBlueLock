@@ -8,10 +8,6 @@ export default function Home() {
         <h1 className="text-4xl font-semibold text-sky-600 tracking-wide drop-shadow-md">
           Team Blue Lock – Hello World!
         </h1>
-        <p className="mt-2 text-white-600">
-          This is your main overview page. You can keep environment and database
-          checks here while you build out the rest.
-        </p>
       </header>
 
       {/* Commented this out only for the Alpha Demo */}
