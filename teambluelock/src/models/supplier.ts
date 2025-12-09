@@ -13,6 +13,7 @@ export interface IProduct {
 }
 
 export interface ISupplier extends Document {
+  userId: string;
   name: string;
   contact: {
     phone?: string;
@@ -37,6 +38,7 @@ const ProductSchema: Schema = new Schema({
 });
 
 const SupplierSchema: Schema = new Schema({
+  userId: {type: String, required: true, index: true,},
   name: { type: String, required: true },
   contact: {
     phone: String,
