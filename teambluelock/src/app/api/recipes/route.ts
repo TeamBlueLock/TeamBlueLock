@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongoose';
 import { Recipe } from '@/models/recipe';
+import { auth } from '@/lib/auth'
 
 /**
 * Creates a new recipe in the database
@@ -70,22 +71,35 @@ import { Recipe } from '@/models/recipe';
 */
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     await connectToDatabase();
-    
     const body = await request.json();
-    
+
     const recipe = await Recipe.create({
+      userId: session.user.id,
       name: body.name,
       description: body.description,
-      ingredients: body.ingredients,
-      instructions: body.instructions,
-      totalCost: body.totalCost,
-      menuPrice: body.menuPrice,
-      grossMargin: body.grossMargin
+      category: body.category,
+      yield: body.yield,
+      ingredients: body.ingredients || [],
+      instructions: body.instructions || [],
+      // For now we let totalCost be 0 – profit analysis will recompute from inventory later.
+      totalCost: body.totalCost ?? 0,
+      menuPrice: body.menuPrice ?? 0,
+      grossMargin: body.grossMargin ?? 0,
     });
-    
+
     return NextResponse.json({ success: true, data: recipe }, { status: 201 });
   } catch (error: any) {
+    console.error("POST /api/recipes error:", error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 400 }
@@ -151,14 +165,26 @@ export async function POST(request: NextRequest) {
 *   "data": []
 * }
 */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const session = await auth.api.getSession({ headers: request.headers });
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     await connectToDatabase();
-    
-    const recipes = await Recipe.find({}).sort({ createdAt: -1 });
-    
+
+    const recipes = await Recipe.find({ userId: session.user.id }).sort({
+      createdAt: -1,
+    });
+
     return NextResponse.json({ success: true, data: recipes });
   } catch (error: any) {
+    console.error("GET /api/recipes error:", error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 400 }

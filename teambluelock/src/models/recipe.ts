@@ -14,6 +14,7 @@ export interface IIngredient {
 }
 
 export interface IRecipe extends Document {
+  userId: string;   
   name: string;
   description?: string;
   category?: string;
@@ -34,7 +35,7 @@ const IngredientSchema: Schema = new Schema({
   name: { type: String, required: true },
   quantity: { type: Number, required: true },
   unit: { type: String, required: true },
-  cost: { type: Number, required: true },
+  cost: { type: Number, required: false },
   supplierId: { type: Schema.Types.ObjectId, ref: 'Supplier' },
   costHistory: [{
     cost: Number,
@@ -44,6 +45,11 @@ const IngredientSchema: Schema = new Schema({
 });
 
 const RecipeSchema: Schema = new Schema({
+  userId: {
+    type: String,
+    required: true,
+    index: true,         
+  },
   name: { type: String, required: true },
   description: String,
   category: String,
@@ -61,4 +67,5 @@ const RecipeSchema: Schema = new Schema({
 });
 
 // Check if model already exists to prevent OverwriteModelError
-export const Recipe: Model<IRecipe> = mongoose.models.Recipe || mongoose.model<IRecipe>('Recipe', RecipeSchema);
+export const Recipe: Model<IRecipe> =
+  mongoose.models.Recipe || mongoose.model<IRecipe>('Recipe', RecipeSchema);
