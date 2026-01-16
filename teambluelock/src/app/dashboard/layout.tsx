@@ -29,21 +29,17 @@ export default async function RootLayout({
   // ✅ BYPASS AUTH ONLY FOR PLAYWRIGHT
   if (process.env.PLAYWRIGHT === "true") {
     return (
-      <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-100`}
-        >
           <div className="min-h-screen flex">
-            <aside className="w-2/14 bg-slate-900 text-slate-100 flex flex-col">
+            <aside className="w-2/14 bg-black text-slate-100 flex flex-col">
               <div className="px-4 py-4 border-b border-slate-700">
                 <h1 className="text-xl font-semibold">TeamBlueLock</h1>
-                <p className="text-xs text-slate-400">Small Business Dashboard</p>
+                <p className="text-xs text-slate-400">Dashboard</p>
               </div>
 
               <nav className="flex-1 px-2 py-4 space-y-1 text-sm">
-                <SidebarLink href="/dashboard/Overview">Overview</SidebarLink>
+                <SidebarLink href="/dashboard/overview">Overview</SidebarLink>
+                <SidebarLink href="/dashboard/inventory">Inventory</SidebarLink>
                 <SidebarLink href="/dashboard/recipes">Recipes</SidebarLink>
-                <SidebarLink href="/dashboard/Inventory">Inventory</SidebarLink>
                 <SidebarLink href="/dashboard/profit-analysis">Profit Analysis</SidebarLink>
               </nav>
 
@@ -56,8 +52,6 @@ export default async function RootLayout({
 
             <main className="flex-1 p-8">{children}</main>
           </div>
-        </body>
-      </html>
     );
   }
 
@@ -71,34 +65,28 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-100`}
-      >
         <div className="min-h-screen flex">
-          <aside className="w-2/14 bg-slate-900 text-slate-100 flex flex-col">
+          <aside className="w-2/14 bg-black text-slate-100 flex flex-col">
             <div className="px-4 py-4 border-b border-slate-700">
               <h1 className="text-xl font-semibold">TeamBlueLock</h1>
-              <p className="text-xs text-slate-400">Small Business Dashboard</p>
+              <p className="text-xs text-gray-400">Dashboard</p>
             </div>
 
             <nav className="flex-1 px-2 py-4 space-y-1 text-sm">
-              <SidebarLink href="/dashboard/Overview">Overview</SidebarLink>
+              <SidebarLink href="/dashboard/overview">Overview</SidebarLink>
+              <SidebarLink href="/dashboard/inventory">Inventory</SidebarLink>
               <SidebarLink href="/dashboard/recipes">Recipes</SidebarLink>
-              <SidebarLink href="/dashboard/Inventory">Inventory</SidebarLink>
               <SidebarLink href="/dashboard/profit-analysis">Profit Analysis</SidebarLink>
             </nav>
 
             <div className="px-4 py-3 border-t border-slate-700 text-xs text-slate-400">
               <LogoutButton />
-              &copy; {new Date().getFullYear()} Team Blue Lock
+              &copy; {new Date().getFullYear()} TeamBlueLock
             </div>
           </aside>
 
           <main className="flex-1 p-8">{children}</main>
         </div>
-      </body>
-    </html>
   );
 }
 

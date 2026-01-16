@@ -4,7 +4,7 @@
 import React from "react";
 import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import InventoryPage from "@/app/dashboard/Inventory/page";
+import InventoryPage from "@/app/dashboard/inventory/page";
 
 function mockFetchOnce(json: any) {
   (global.fetch as jest.Mock).mockResolvedValueOnce({

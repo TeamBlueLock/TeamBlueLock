@@ -30,3 +30,8 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 '@ | Add-Content .gitignore
+
+# iCloud stuff (Brooks)
+.nosync
+.DS_Store
+*.icloud

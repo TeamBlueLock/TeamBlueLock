@@ -329,7 +329,7 @@ export default function RecipesPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-semibold text-slate-700 uppercase">
-                  Ingredients (link to inventory)
+                  Ingredients
                 </h4>
                 <Button
                   type="button"
