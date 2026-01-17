@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Team Blue Lock Dashboard",
   description: "Senior Project – Team Blue Lock",
+  icons: {
+    icon: "/favicon.ico",
+  },
 }
 
 export default function RootLayout({

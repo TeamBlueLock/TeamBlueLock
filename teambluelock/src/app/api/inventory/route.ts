@@ -21,13 +21,16 @@ export async function POST(request: NextRequest) {
     const item = await InventoryItem.create({
       userId: session.user.id,
       name: body.name,
-      sku: body.sku,
-      category: body.category,
       unit: body.unit,
       unitCost: body.unitCost ?? 0,
       inStock: body.inStock ?? 0,
       reorderPoint: body.reorderPoint ?? 0,
+      category: body.category,
+      subCategory: body.subCategory,
+      supplier: body.supplier,
+      customFields: body.customFields ?? {},
     });
+
 
     return NextResponse.json({ success: true, data: item }, { status: 201 });
   } catch (error: any) {
