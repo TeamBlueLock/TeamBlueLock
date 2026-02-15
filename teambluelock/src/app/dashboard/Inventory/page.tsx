@@ -2,6 +2,7 @@
 
 import { useEffect, useState, FormEvent, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { UNITS } from "@/lib/units";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 import {
   DropdownMenu,
@@ -11,6 +12,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import React from "react";
 
+const groupedUnits = Object.entries(UNITS).reduce(
+  (acc, [key, unit]) => {
+    if (!acc[unit.category]) {
+      acc[unit.category] = [];
+    }
+    acc[unit.category].push(key);
+    return acc;
+  },
+  {} as Record<string, string[]>
+);
 
 interface InventoryItem {
   _id: string;
@@ -19,12 +30,6 @@ interface InventoryItem {
   unitCost: number;
   inStock?: number;
   reorderPoint?: number;
-
-  // Recommended
-  sku?: string;
-  category?: string;
-  subCategory?: string;
-  supplier?: string;
 
   // Custom
   customFields?: Record<string, string | number | boolean>;
@@ -803,15 +808,32 @@ export default function InventoryPage() {
               <label className="text-xs font-medium text-slate-700">
                 Unit *
               </label>
-              <input
-                type="text"
+
+              <select
                 value={itemForm.unit}
                 onChange={(e) => handleInputChange("unit", e.target.value)}
                 className="w-full rounded-md border px-3 py-2 text-sm"
-                placeholder="piece, kg, lb..."
                 required
-              />
+              >
+                <option value="">Select unit</option>
+
+                {["weight", "volume", "count"].map((category) =>
+                  groupedUnits[category] ? (
+                    <optgroup
+                      key={category}
+                      label={category.charAt(0).toUpperCase() + category.slice(1)}
+                    >
+                      {groupedUnits[category].map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : null
+                )}
+              </select>
             </div>
+
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-700">
@@ -924,7 +946,6 @@ export default function InventoryPage() {
           />
         </div>
       )}
-
 
 
       {/* Inventory Table */}

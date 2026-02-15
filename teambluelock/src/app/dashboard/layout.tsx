@@ -79,7 +79,7 @@ export default async function RootLayout({
               <SidebarLink href="/dashboard/profit-analysis">Profit Analysis</SidebarLink>
             </nav>
 
-            <div className="px-4 py-3 border-t border-slate-700 text-xs text-slate-400">
+            <div className="px-4 py-3 border-t border-slate-700 text-xs text-slate-400 flex flex-col items-center gap-1 text-center">
               <LogoutButton />
               &copy; {new Date().getFullYear()} TeamBlueLock
             </div>

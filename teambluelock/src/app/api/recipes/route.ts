@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
       name: body.name,
       description: body.description,
       category: body.category,
+      subCategory: body.subCategory,
       yield: body.yield,
       ingredients: body.ingredients || [],
       instructions: body.instructions || [],
