@@ -2,12 +2,32 @@
 
 import { useEffect, useState, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { UNITS } from "@/lib/units";
+import { convertToBase, getUnitCategory } from "@/lib/unitConversion";
+
+const UNIT_OPTIONS = Object.keys(UNITS);
+
+const groupedUnits = Object.entries(UNITS).reduce(
+  (acc, [key, unit]) => {
+    if (!acc[unit.category]) {
+      acc[unit.category] = [];
+    }
+    acc[unit.category].push(key);
+    return acc;
+  },
+  {} as Record<string, string[]>
+);
 
 type InventoryItem = {
   _id: string;
   name: string;
   unit: string;
   unitCost: number;
+  baseUnit: string;
+  costPerBaseUnit: number;
+  gramsPerPiece?: number;
+  gramsPerMl?: number;
+  mlPerPiece?: number;
 };
 
 type IngredientForm = {
@@ -19,6 +39,8 @@ type IngredientForm = {
 type RecipeRow = {
   _id: string;
   name: string;
+  category?: string;
+  subCategory?: string;
   menuPrice?: number;
   createdAt?: string;
 };
@@ -35,9 +57,85 @@ export default function RecipesPage() {
 
   const [recipeName, setRecipeName] = useState("");
   const [menuPrice, setMenuPrice] = useState<string>("");
+  const [category, setCategory] = useState("");
+  const [subCategory, setSubCategory] = useState("");
   const [ingredients, setIngredients] = useState<IngredientForm[]>([
     { name: "", unit: "", quantity: "" },
   ]);
+
+  const [pendingConversions, setPendingConversions] = useState<any[]>([]);
+  const [activeConversionIndex, setActiveConversionIndex] = useState(0);
+
+  const [conversionValue, setConversionValue] = useState<string>("");
+  const [pendingIngredients, setPendingIngredients] = useState<any[] | null>(null);
+
+  async function validateAndCalculateCost(cleanedIngredients: any[]) {
+    const mismatches: any[] = [];
+
+    for (const ing of cleanedIngredients) {
+      const inventoryItem = inventory.find(
+        (item) => item.name.toLowerCase() === ing.name.toLowerCase()
+      );
+
+      if (!inventoryItem) continue;
+
+      const { baseUnit } = convertToBase(ing.quantity, ing.unit);
+
+      if (baseUnit !== inventoryItem.baseUnit) {
+        mismatches.push({
+          inventoryItem,
+          ingredientName: ing.name,
+          recipeBaseUnit: baseUnit,
+          inventoryBaseUnit: inventoryItem.baseUnit,
+        });
+      }
+    }
+
+    if (mismatches.length > 0) {
+      setPendingIngredients(cleanedIngredients);
+      setPendingConversions(mismatches);
+      setActiveConversionIndex(0);
+      return false;
+    }
+
+    return true;
+  }
+
+  // function canConvertWithExistingData(
+  //   recipeBaseUnit: string,
+  //   inventoryBaseUnit: string,
+  //   inventoryItem: InventoryItem
+  // ) {
+  //   const recipeCategory = getUnitCategory(recipeBaseUnit);
+  //   const inventoryCategory = getUnitCategory(inventoryBaseUnit);
+
+  //   // count ↔ mass
+  //   if (
+  //     (recipeCategory === "count" && inventoryCategory === "mass") ||
+  //     (recipeCategory === "mass" && inventoryCategory === "count")
+  //   ) {
+  //     return !!inventoryItem.gramsPerPiece;
+  //   }
+
+  //   // volume ↔ mass
+  //   if (
+  //     (recipeCategory === "volume" && inventoryCategory === "mass") ||
+  //     (recipeCategory === "mass" && inventoryCategory === "volume")
+  //   ) {
+  //     return !!inventoryItem.gramsPerMl;
+  //   }
+
+  //   // count ↔ volume
+  //   if (
+  //     (recipeCategory === "count" && inventoryCategory === "volume") ||
+  //     (recipeCategory === "volume" && inventoryCategory === "count")
+  //   ) {
+  //     return !!inventoryItem.mlPerPiece;
+  //   }
+
+  //   return false;
+  // }
+
 
   // NEW: track edit vs create
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -89,6 +187,33 @@ export default function RecipesPage() {
     );
   }
 
+  type SortDirection = "asc" | "desc";
+
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof RecipeRow | null;
+    direction: SortDirection;
+  }>({
+    key: null,
+    direction: "asc",
+  });
+
+
+  function handleSort(key: keyof RecipeRow) {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        return {
+          key,
+          direction: prev.direction === "asc" ? "desc" : "asc",
+        };
+      }
+
+      return {
+        key,
+        direction: "asc",
+      };
+    });
+  }
+
   function addIngredientRow() {
     setIngredients((prev) => [...prev, { name: "", unit: "", quantity: "" }]);
   }
@@ -101,6 +226,8 @@ export default function RecipesPage() {
   function resetForm() {
     setRecipeName("");
     setMenuPrice("");
+    setCategory("");
+    setSubCategory("");
     setIngredients([{ name: "", unit: "", quantity: "" }]);
     setFormError(null);
     setEditingId(null);
@@ -121,6 +248,8 @@ export default function RecipesPage() {
 
       setEditingId(recipe._id);
       setRecipeName(recipe.name || "");
+      setCategory(recipe.category || "");
+      setSubCategory(recipe.subCategory || "");
       setMenuPrice(
         recipe.menuPrice != null ? String(recipe.menuPrice) : ""
       );
@@ -141,6 +270,16 @@ export default function RecipesPage() {
       );
 
       setShowForm(true);
+
+      setTimeout(() => {
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      }, 0);
+
+      setFormError(null);
+
     } catch (err: any) {
       console.error("Failed to load recipe for edit:", err);
       setFormError(err.message || "Failed to load recipe for editing.");
@@ -173,7 +312,52 @@ export default function RecipesPage() {
       alert("Failed to delete recipe: " + err.message);
     }
   }
-  
+
+  async function saveRecipe(cleanedIngredients: any[]) {
+    const parsedMenuPrice = parseFloat(menuPrice || "0");
+
+    const payload = {
+      name: recipeName.trim(),
+      category: category.trim(),
+      subCategory: subCategory.trim(),
+      menuPrice: parsedMenuPrice,
+      ingredients: cleanedIngredients,
+    };
+
+    let res: Response;
+
+    if (isEditMode && editingId) {
+      res = await fetch(`/api/recipes/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } else {
+      res = await fetch("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    }
+
+    const json = await res.json();
+    if (!json.success) {
+      throw new Error(json.error || "Failed to save recipe");
+    }
+
+    const saved = json.data;
+
+    if (isEditMode && editingId) {
+      setRecipes((prev) =>
+        prev.map((r) => (r._id === editingId ? saved : r))
+      );
+    } else {
+      setRecipes((prev) => [saved, ...prev]);
+    }
+
+    resetForm();
+  }
+
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -204,55 +388,118 @@ export default function RecipesPage() {
     }
 
     setIsSaving(true);
+
+    const isValid = await validateAndCalculateCost(cleanedIngredients);
+    if (!isValid) {
+      setIsSaving(false);
+      return;
+    }
+
     try {
-      const payload = {
-        name: recipeName.trim(),
-        menuPrice: parsedMenuPrice,
-        ingredients: cleanedIngredients,
-      };
-
-      let res: Response;
-      let json: any;
-
-      if (isEditMode && editingId) {
-        // UPDATE existing recipe
-        res = await fetch(`/api/recipes/${editingId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      } else {
-        // CREATE new recipe
-        res = await fetch("/api/recipes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      }
-
-      json = await res.json();
-      if (!json.success) {
-        throw new Error(json.error || "Failed to save recipe");
-      }
-
-      const saved = json.data as any;
-
-      if (isEditMode && editingId) {
-        // Replace in existing list
-        setRecipes((prev) =>
-          prev.map((r) => (r._id === editingId ? saved : r))
-        );
-      } else {
-        // Add new recipe to top
-        setRecipes((prev) => [saved, ...prev]);
-      }
-
-      resetForm();
+      await saveRecipe(cleanedIngredients);
     } catch (err: any) {
-      console.error("Error saving recipe:", err);
       setFormError(err.message || "Failed to save recipe.");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  const sortedRecipes = [...recipes].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+
+    // Handle undefined/null
+    if (aValue == null) return 1;
+    if (bValue == null) return -1;
+
+    // Number sort
+    if (typeof aValue === "number" && typeof bValue === "number") {
+      return sortConfig.direction === "asc"
+        ? aValue - bValue
+        : bValue - aValue;
+    }
+
+    // String sort
+    const aString = String(aValue).toLowerCase();
+    const bString = String(bValue).toLowerCase();
+
+    if (sortConfig.direction === "asc") {
+      return aString.localeCompare(bString);
+    } else {
+      return bString.localeCompare(aString);
+    }
+  });
+
+  // Determine conversion prompt text
+  const activeConversion =
+    pendingConversions.length > 0
+      ? pendingConversions[activeConversionIndex]
+      : null;
+    let conversionLabel = "";
+
+  useEffect(() => {
+    if (!activeConversion) {
+      setConversionValue("");
+      return;
+    }
+
+    const recipeCategory = getUnitCategory(activeConversion.recipeBaseUnit);
+    const inventoryCategory = getUnitCategory(activeConversion.inventoryBaseUnit);
+
+    let existingValue: number | undefined;
+
+    if (
+      (recipeCategory === "count" && inventoryCategory === "mass") ||
+      (recipeCategory === "mass" && inventoryCategory === "count")
+    ){
+      existingValue = activeConversion.inventoryItem.gramsPerPiece;
+    } 
+    else if (
+      (recipeCategory === "volume" && inventoryCategory === "mass") ||
+      (recipeCategory === "mass" && inventoryCategory === "volume")
+    ) {
+      existingValue = activeConversion.inventoryItem.gramsPerMl;
+    } 
+    else if (
+      (recipeCategory === "count" && inventoryCategory === "volume") ||
+      (recipeCategory === "volume" && inventoryCategory === "count")
+    ) {
+      existingValue = activeConversion.inventoryItem.mlPerPiece;
+    }
+
+    if (existingValue && existingValue > 0) {
+      setConversionValue(String(existingValue));
+    } else {
+      setConversionValue("");
+    }
+  }, [activeConversion]);
+
+  if (activeConversion) {
+    const recipeCategory = getUnitCategory(activeConversion.recipeBaseUnit);
+    const inventoryCategory = getUnitCategory(activeConversion.inventoryBaseUnit);
+
+    if (
+      (recipeCategory === "count" && inventoryCategory === "mass") ||
+      (recipeCategory === "mass" && inventoryCategory === "count")
+    ) {
+      conversionLabel = `How many grams are in 1 piece of ${activeConversion.ingredientName}?\n
+      Tip: Weigh 3 ${activeConversion.ingredientName}s in g and divide the result by 3 to get an average weight per ${activeConversion.ingredientName}.`;
+    } else if (
+      (recipeCategory === "count" && inventoryCategory === "volume") ||
+      (recipeCategory === "volume" && inventoryCategory === "count")
+    ) {
+      conversionLabel = `How many ml are in 1 piece of ${activeConversion.ingredientName}?\n
+      Tip: This is a tricky conversion! We recommend filling a measuring cup partly with water and placing the item to see how much the water changes in ml. Otherwise, see how many ${activeConversion.ingredientName}s fit in a measuring cup and divide 236.5 (the number of ml/cup) by that number.`;
+    } else if (
+      (recipeCategory === "volume" && inventoryCategory === "mass") ||
+      (recipeCategory === "mass" && inventoryCategory === "volume")
+    ) {
+      conversionLabel = `How many grams are in 1 ml of ${activeConversion.ingredientName}?\n
+      Tip: Weigh 5 mls of ${activeConversion.ingredientName} (1 tsp) in g and divide the result by 5 to get the average mass per ml.`;
+    } else {
+      conversionLabel = "Enter conversion value";
     }
   }
 
@@ -260,6 +507,7 @@ export default function RecipesPage() {
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <h2 className="text-3xl text-sky-600 font-semibold">Recipes</h2>
+          <div className="flex items-center gap-2">
         <Button
           onClick={() => {
             if (showForm && !isEditMode) {
@@ -280,6 +528,12 @@ export default function RecipesPage() {
             ? "Cancel"
             : "Add New Recipe"}
         </Button>
+
+        <Button>
+          Upload Recipes
+        </Button>
+
+        </div>
       </header>
 
       {showForm && (
@@ -321,6 +575,32 @@ export default function RecipesPage() {
                   onChange={(e) => setMenuPrice(e.target.value)}
                   className="w-full rounded-md border px-3 py-2 text-sm"
                   placeholder="12.00"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-700">
+                  Category
+                </label>
+                <input
+                  type="text"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  placeholder="Dinner"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-700">
+                  Sub-Category
+                </label>
+                <input
+                  type="text"
+                  value={subCategory}
+                  onChange={(e) => setSubCategory(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  placeholder="Burgers"
                 />
               </div>
             </div>
@@ -379,19 +659,29 @@ export default function RecipesPage() {
                       <label className="text-xs font-medium text-slate-700">
                         Unit
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={ing.unit}
                         onChange={(e) =>
-                          handleIngredientChange(
-                            index,
-                            "unit",
-                            e.target.value
-                          )
+                          handleIngredientChange(index, "unit", e.target.value)
                         }
                         className="w-full rounded-md border px-3 py-2 text-sm"
-                        placeholder="piece, g, kg..."
-                      />
+                      >
+                        <option value="">Select unit</option>
+
+                        {Object.entries(groupedUnits).map(([category, units]) => (
+                          <optgroup
+                            key={category}
+                            label={category.charAt(0).toUpperCase() + category.slice(1)}
+                          >
+                            {units.map((unit) => (
+                              <option key={unit} value={unit}>
+                                {unit}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+
                     </div>
 
                     {/* Quantity */}
@@ -429,12 +719,168 @@ export default function RecipesPage() {
                     </div>
                   </div>
                 ))}
+
+                {activeConversion && (
+                  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 shadow-lg">
+                      <div className="flex justify-between items-start">
+                        <h3 className="text-lg font-semibold">
+                          Define Conversion for {activeConversion.ingredientName}
+                        </h3>
+
+                        <span className="text-xs text-slate-500 font-medium">
+                          {activeConversionIndex + 1}/{pendingConversions.length}
+                        </span>
+                      </div>
+
+                      <p className="text-sm text-slate-600">
+                        This ingredient is stored in{" "}
+                        <strong>{activeConversion.inventoryBaseUnit}</strong> but
+                        used in <strong>{activeConversion.recipeBaseUnit}</strong>.
+                      </p>
+
+                      <p className="text-sm text-slate-700 font-medium whitespace-pre-line">{conversionLabel}</p>
+
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={conversionValue}
+                        onChange={(e) => setConversionValue(e.target.value)}
+                        className="w-full border rounded-md px-3 py-2"
+                        placeholder={'100'}
+                      />
+
+                      <p className="text-xs text-slate-500">
+                        Previous conversion values will appear here, and new values will be saved to this inventory item for future conversions.
+                      </p>
+
+
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setPendingConversions([]);
+                            setActiveConversionIndex(0);
+                            setPendingIngredients(null);
+                            setIsSaving(false);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+
+                        <Button
+                          onClick={async () => {
+                            try {
+                              if (!activeConversion) return;
+
+                              const parsed = parseFloat(conversionValue);
+                              if (isNaN(parsed) || parsed <= 0) {
+                                alert("Please enter a valid conversion value.");
+                                return;
+                              }
+
+                              const recipeCategory = getUnitCategory(activeConversion.recipeBaseUnit);
+                              const inventoryCategory = getUnitCategory(activeConversion.inventoryBaseUnit);
+
+                              let fieldToUpdate: string | null = null;
+
+                              if (
+                                (recipeCategory === "count" && inventoryCategory === "mass") ||
+                                (recipeCategory === "mass" && inventoryCategory === "count")
+                              ) {
+                                fieldToUpdate = "gramsPerPiece";
+                              }
+
+                              if (
+                                (recipeCategory === "volume" && inventoryCategory === "mass") ||
+                                (recipeCategory === "mass" && inventoryCategory === "volume")
+                              ) {
+                                fieldToUpdate = "gramsPerMl";
+                              }
+
+                              if (
+                                (recipeCategory === "count" && inventoryCategory === "volume") ||
+                                (recipeCategory === "volume" && inventoryCategory === "count")
+                              ) {
+                                fieldToUpdate = "mlPerPiece";
+                              }
+
+                              if (!fieldToUpdate) {
+                                alert("Unsupported unit conversion.");
+                                return;
+                              }
+
+                              // Capture values first
+                              const nextIndex = activeConversionIndex + 1;
+
+                              // Close modal for current conversion immediately
+                              setActiveConversionIndex(nextIndex >= pendingConversions.length ? 0 : nextIndex);
+                              setConversionValue("");
+                              if (nextIndex >= pendingConversions.length) {
+                                setPendingConversions([]);
+                                setPendingIngredients(null);
+                              }
+
+                              await fetch(`/api/inventory/${activeConversion.inventoryItem._id}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  [fieldToUpdate]: parsed,
+                                }),
+                              });
+
+                              // Reload inventory
+                              const res = await fetch("/api/inventory", { cache: "no-store" });
+                              const json = await res.json();
+                              setInventory(json.data);
+
+                              // Move to next conversion OR finish
+                              if (activeConversionIndex < pendingConversions.length - 1) {
+                                setActiveConversionIndex(prev => prev + 1);
+                                setConversionValue("");
+                              } else {
+                                // Done with all conversions
+                                const finalIngredients = pendingIngredients;
+
+                                setPendingConversions([]);
+                                setActiveConversionIndex(0);
+                                setPendingIngredients(null);
+
+                                if (finalIngredients) {
+                                  try {
+                                    await saveRecipe(finalIngredients);
+                                  } catch (err: any) {
+                                    setFormError(err.message || "Failed to save recipe.");
+                                  } finally {
+                                    setIsSaving(false);
+                                  }
+                                }
+                              }
+
+                            } catch (err: any) {
+                              console.error(err);
+                              alert(err.message || "Failed to save conversion.");
+                            }
+                          }}
+                        >
+                          Save Conversion
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* datalist of inventory names for autocomplete */}
               <datalist id="inventory-names">
                 {inventory.map((item) => (
                   <option key={item._id} value={item.name} />
+                ))}
+              </datalist>
+              {/* datalist of unit options for autocomplete */}
+              <datalist id="unit-options">
+                {UNIT_OPTIONS.map((unit) => (
+                  <option key={unit} value={unit} />
                 ))}
               </datalist>
             </div>
@@ -452,7 +898,8 @@ export default function RecipesPage() {
         </section>
       )}
 
-      {/* List of recipes */}
+
+      {/* Recipe Table */}
       <section className="rounded-xl border bg-sky-600 shadow-sm">
         <div className="border-b px-6 py-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">
@@ -466,57 +913,111 @@ export default function RecipesPage() {
         {loadingRecipes ? (
           <div className="p-6 text-white">Loading...</div>
         ) : (
-          <div className="divide-y divide-slate-100">
-            {recipes.map((recipe) => (
-              <div
-                key={recipe._id}
-                className="px-6 py-4 bg-white hover:bg-slate-50"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-900">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-sky-300 text-xs uppercase text-slate-600">
+                <tr>
+                  <th
+                    onClick={() => handleSort("name")}
+                    className="px-6 py-3 text-left font-medium cursor-pointer select-none"
+                  >
+                    Recipe Name
+                    {sortConfig.key === "name" &&
+                      (sortConfig.direction === "asc" ? " ↑" : " ↓")}
+                  </th>
+
+                  <th
+                    onClick={() => handleSort("category")}
+                    className="px-6 py-3 text-left font-medium cursor-pointer select-none"
+                  >
+                    Category
+                    {sortConfig.key === "category" &&
+                      (sortConfig.direction === "asc" ? " ↑" : " ↓")}
+                  </th>
+
+                  <th
+                    onClick={() => handleSort("subCategory")}
+                    className="px-6 py-3 text-left font-medium cursor-pointer select-none"
+                  >
+                    SubCategory
+                    {sortConfig.key === "subCategory" &&
+                      (sortConfig.direction === "asc" ? " ↑" : " ↓")}
+                  </th>
+
+                  <th
+                    onClick={() => handleSort("menuPrice")}
+                    className="px-6 py-3 text-right font-medium cursor-pointer select-none"
+                  >
+                    Menu Price ($)
+                    {sortConfig.key === "menuPrice" &&
+                      (sortConfig.direction === "asc" ? " ↑" : " ↓")}
+                  </th>
+
+                  <th className="px-6 py-3 text-center font-medium">Manage</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-slate-100">
+                {sortedRecipes.map((recipe) => (
+                  <tr
+                    key={recipe._id}
+                    className="hover:bg-slate-200 odd:bg-white even:bg-slate-50"
+                  >
+                    <td className="px-6 py-3 text-slate-800">
                       {recipe.name}
-                    </h4>
-                    {recipe.createdAt && (
-                      <p className="text-xs text-slate-500">
-                        Created{" "}
-                        {new Date(recipe.createdAt).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right text-xs text-slate-700">
-                      <div>Menu Price:</div>
-                      <div className="font-semibold">
-                        ${recipe.menuPrice?.toFixed(2) ?? "0.00"}
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditClick(recipe._id)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
+                    </td>
+
+                    <td className="px-6 py-3 text-slate-600">
+                      {recipe.category || "-"}
+                    </td>
+
+                    <td className="px-6 py-3 text-slate-600">
+                      {recipe.subCategory || "-"}
+                    </td>
+
+                    <td className="px-6 py-3 text-right tabular-nums text-slate-800">
+                      ${recipe.menuPrice?.toFixed(2) ?? "0.00"}
+                    </td>
+
+                    <td className="px-6 py-3 text-center">
+                      <div className="flex justify-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditClick(recipe._id)}
+                      >
+                        Edit
+                      </Button>
+
+                      <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => handleDelete(recipe._id)}
                       >
                         Delete
                       </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
 
-            {!loadingRecipes && recipes.length === 0 && (
-              <div className="px-6 py-6 text-center text-white">
-                No recipes yet. Add your first recipe to get started.
-              </div>
-            )}
+                {!loadingRecipes && recipes.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-6 text-center text-white"
+                    >
+                      No recipes yet. Add your first recipe to get started.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         )}
+        <div className="px-6 py-3 bg-sky-600 text-xs text-slate-500 rounded-xl">
+          {/* Optional footer content */}
+        </div>
       </section>
     </div>
   );

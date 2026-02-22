@@ -18,6 +18,7 @@ export interface IRecipe extends Document {
   name: string;
   description?: string;
   category?: string;
+  subCategory?: string;
   yield?: {
     amount: number;
     unit: string;
@@ -53,6 +54,7 @@ const RecipeSchema: Schema = new Schema({
   name: { type: String, required: true },
   description: String,
   category: String,
+  subCategory: String,
   yield: {
     amount: Number,
     unit: String

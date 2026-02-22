@@ -3,6 +3,8 @@ import { connectToDatabase } from '@/lib/mongoose';
 import { InventoryItem } from "@/models/inventory";
 import { auth } from "@/lib/auth";
 import { Types } from 'mongoose';
+import { convertToBase } from '@/lib/unitConversion';
+import { UNITS } from '@/lib/units';
 
 // GET a specific inventory item
 export async function GET(
@@ -61,6 +63,19 @@ export async function PUT(
     const body = await request.json();
     await connectToDatabase();
 
+        // Validate unit
+    const unitDefinition = UNITS[body.unit];
+    if (!unitDefinition) {
+      return NextResponse.json(
+        { success: false, error: "Invalid unit" },
+        { status: 400 }
+      );
+    }
+
+    // Compute baseUnit and costPerBaseUnit
+    const { baseAmount, baseUnit } = convertToBase(1, body.unit);
+    const costPerBaseUnit = baseAmount > 0 ? (body.unitCost ?? 0) / baseAmount : 0;
+
     // Find and update the item
     const item = await InventoryItem.findOneAndUpdate(
       {
@@ -73,9 +88,8 @@ export async function PUT(
         unitCost: body.unitCost ?? 0,
         inStock: body.inStock ?? 0,
         reorderPoint: body.reorderPoint ?? 0,
-        category: body.category,
-        subCategory: body.subCategory,
-        supplier: body.supplier,
+        baseUnit,
+        costPerBaseUnit,
         customFields: body.customFields || {},
         },
       {
@@ -132,6 +146,35 @@ export async function PATCH(
     if (body.customFields !== undefined) {
         updateData.customFields = body.customFields;
     }
+
+    if (body.gramsPerPiece !== undefined)
+      updateData.gramsPerPiece = body.gramsPerPiece;
+
+    if (body.gramsPerMl !== undefined)
+      updateData.gramsPerMl = body.gramsPerMl;
+
+    if (body.mlPerPiece !== undefined)
+      updateData.mlPerPiece = body.mlPerPiece;
+
+    if (body.unit !== undefined) {
+      const unitDefinition = UNITS[body.unit];
+      if (!unitDefinition) {
+        return NextResponse.json(
+          { success: false, error: "Invalid unit" },
+          { status: 400 }
+        );
+      }
+
+      const { baseAmount, baseUnit } = convertToBase(1, body.unit);
+
+      updateData.baseUnit = baseUnit;
+
+      const cost = body.unitCost ?? 0;
+      updateData.costPerBaseUnit =
+        baseAmount > 0 ? cost / baseAmount : 0;
+    }
+
+
 
     // Find and update the item
     const item = await InventoryItem.findOneAndUpdate(

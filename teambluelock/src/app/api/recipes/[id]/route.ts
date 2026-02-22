@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: RouteParamsPromise) 
       );
     }
 
-    const { id } = await params;          // 👈 unwrap the Promise
+    const { id } = await params;
 
     await connectToDatabase();
 
@@ -67,6 +67,7 @@ export async function PUT(request: NextRequest, { params }: RouteParamsPromise) 
         name: body.name,
         description: body.description,
         category: body.category,
+        subCategory: body.subCategory,
         yield: body.yield,
         ingredients: body.ingredients,
         instructions: body.instructions,

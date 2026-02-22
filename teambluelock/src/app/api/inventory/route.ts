@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongoose';
 import { InventoryItem } from "@/models/inventory";
 import { auth } from "@/lib/auth"
+import { convertToBase } from "@/lib/unitConversion";
+import { UNITS } from "@/lib/units";
 
 
 export async function POST(request: NextRequest) {
@@ -18,21 +20,47 @@ export async function POST(request: NextRequest) {
     await connectToDatabase();
     const body = await request.json();
 
+    const {
+      name,
+      unit,
+      unitCost = 0,
+      inStock = 0,
+      reorderPoint = 0,
+      customFields = {},
+    } = body;
+
+    const unitDefinition = UNITS[unit];
+    if (!unitDefinition) {
+      return NextResponse.json(
+        { success: false, error: "Invalid unit" },
+        { status: 400 }
+      );
+    }
+
+    const { baseAmount, baseUnit } =
+      convertToBase(1, unit);
+
+    const costPerBaseUnit =
+      baseAmount > 0 ? unitCost / baseAmount : 0;
+
     const item = await InventoryItem.create({
       userId: session.user.id,
-      name: body.name,
-      unit: body.unit,
-      unitCost: body.unitCost ?? 0,
-      inStock: body.inStock ?? 0,
-      reorderPoint: body.reorderPoint ?? 0,
-      category: body.category,
-      subCategory: body.subCategory,
-      supplier: body.supplier,
-      customFields: body.customFields ?? {},
+      name,
+      unit,
+      unitCost,
+      inStock,
+      reorderPoint,
+
+      baseUnit,
+      costPerBaseUnit,
+
+      customFields,
     });
 
-
-    return NextResponse.json({ success: true, data: item }, { status: 201 });
+    return NextResponse.json(
+      { success: true, data: item },
+      { status: 201 }
+    );
   } catch (error: any) {
     console.error("POST /api/inventory error:", error);
     return NextResponse.json(
