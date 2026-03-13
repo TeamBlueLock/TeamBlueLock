@@ -410,161 +410,144 @@ export default function ProfitAnalysisPage() {
         <TabsContent value="table" className="space-y-4">
           <section className="rounded-xl border bg-sky-600 shadow-sm">
             <div className="border-b px-6 py-4 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">
-                  Recipe Margins
-                </h3>
-                <p className="text-xs text-white mt-1">
-                  Margin = Menu Price − ingredient costs from inventory.
-                </p>
-              </div>
-
-              <div className="flex flex-col items-end gap-1 text-xs text-slate-700">
-                <span>Total recipes: {rows.length}</span>
-                <span>
-                  Missing ingredient links:{" "}
-                  <span className="font-semibold">{dashboard.missingAny}</span>
-                </span>
-              </div>
+              <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">
+                Recipe Margins
+              </h3>
+              <span className="text-xs text-slate-700">
+                Total recipes: {rows.length}
+              </span>
             </div>
 
             {loading ? (
-              <div className="p-6 text-white">Loading...</div>
-            ) : rows.length === 0 ? (
-              <div className="px-6 py-6 text-center text-white">
-                No recipes or inventory data yet. Add inventory items and recipes to see
-                profit analysis.
-              </div>
+              <div className="p-6 text-slate-700">Loading...</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-sky-300 text-xs uppercase text-slate-600">
-                    <tr>
-                      <th
-                        onClick={() => handleSort("name")}
-                        className="px-6 py-3 text-left font-medium cursor-pointer select-none"
-                      >
-                        Recipe
-                        {sortArrow("name")}
-                      </th>
+              <table className="min-w-full text-sm">
+                <thead className="bg-sky-300 text-xs uppercase text-slate-600">
+                  <tr>
+                    <th
+                      onClick={() => handleSort("name")}
+                      className="px-4 py-3 text-left font-medium cursor-pointer select-none"
+                    >
+                      Recipe
+                      {sortArrow("name")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("category")}
+                      className="px-4 py-3 text-left font-medium cursor-pointer select-none"
+                    >
+                      Category
+                      {sortArrow("category")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("subCategory")}
+                      className="px-4 py-3 text-left font-medium cursor-pointer select-none"
+                    >
+                      Sub-Category
+                      {sortArrow("subCategory")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("menuPrice")}
+                      className="px-4 py-3 text-right font-medium cursor-pointer select-none"
+                    >
+                      Menu Price ($)
+                      {sortArrow("menuPrice")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("computedCost")}
+                      className="px-4 py-3 text-right font-medium cursor-pointer select-none"
+                    >
+                      Cost from Inventory ($)
+                      {sortArrow("computedCost")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("marginAmount")}
+                      className="px-4 py-3 text-right font-medium cursor-pointer select-none"
+                    >
+                      Margin ($)
+                      {sortArrow("marginAmount")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("marginPct")}
+                      className="px-4 py-3 text-right font-medium cursor-pointer select-none"
+                    >
+                      Margin (%)
+                      {sortArrow("marginPct")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("missingIngredients")}
+                      className="px-4 py-3 text-left font-medium cursor-pointer select-none"
+                    >
+                      Missing Ingredients
+                      {sortArrow("missingIngredients")}
+                    </th>
+                  </tr>
+                </thead>
 
-                      <th
-                        onClick={() => handleSort("category")}
-                        className="px-6 py-3 text-left font-medium cursor-pointer select-none"
-                      >
-                        Category
-                        {sortArrow("category")}
-                      </th>
+                <tbody className="divide-y divide-slate-100">
+                  {sortedRows.map((row) => {
+                    const marginClass =
+                      row.marginPct == null
+                        ? ""
+                        : row.marginPct < 40
+                        ? "text-red-600 font-semibold"
+                        : row.marginPct < 60
+                        ? "text-amber-600 font-semibold"
+                        : "text-emerald-700 font-semibold";
 
-                      <th
-                        onClick={() => handleSort("subCategory")}
-                        className="px-6 py-3 text-left font-medium cursor-pointer select-none"
-                      >
-                        Sub-Category
-                        {sortArrow("subCategory")}
-                      </th>
-
-                      <th
-                        onClick={() => handleSort("menuPrice")}
-                        className="px-6 py-3 text-right font-medium cursor-pointer select-none"
-                      >
-                        Menu Price ($)
-                        {sortArrow("menuPrice")}
-                      </th>
-
-                      <th
-                        onClick={() => handleSort("computedCost")}
-                        className="px-6 py-3 text-right font-medium cursor-pointer select-none"
-                      >
-                        Cost from Inventory ($)
-                        {sortArrow("computedCost")}
-                      </th>
-
-                      <th
-                        onClick={() => handleSort("marginAmount")}
-                        className="px-6 py-3 text-right font-medium cursor-pointer select-none"
-                      >
-                        Margin ($)
-                        {sortArrow("marginAmount")}
-                      </th>
-
-                      <th
-                        onClick={() => handleSort("marginPct")}
-                        className="px-6 py-3 text-right font-medium cursor-pointer select-none"
-                      >
-                        Margin (%)
-                        {sortArrow("marginPct")}
-                      </th>
-
-                      <th className="px-6 py-3 text-left font-medium">
-                        Missing Ingredients
-                      </th>
-
-                      <th className="px-6 py-3 text-center font-medium">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-slate-100">
-                    {sortedRows.map((row) => (
+                    return (
                       <tr
                         key={row.recipeId}
                         className="hover:bg-slate-200 odd:bg-white even:bg-slate-50"
                       >
-                        <td className="px-6 py-3 text-slate-800 font-medium">
-                          {row.name}
+                        <td className="px-4 py-3 text-slate-900">{row.name}</td>
+                        <td className="px-4 py-3 text-slate-900">
+                          {row.category != null ? row.category : "-"}
                         </td>
-
-                        <td className="px-6 py-3 text-slate-600">
-                          {row.category ?? "-"}
+                        <td className="px-4 py-3 text-slate-900">
+                          {row.subCategory != null ? row.subCategory : "-"}
                         </td>
-
-                        <td className="px-6 py-3 text-slate-600">
-                          {row.subCategory ?? "-"}
-                        </td>
-
-                        <td className="px-6 py-3 text-right tabular-nums text-slate-800">
+                        <td className="px-4 py-3 text-right tabular-nums text-slate-800">
                           {row.menuPrice.toFixed(2)}
                         </td>
-
-                        <td className="px-6 py-3 text-right tabular-nums text-slate-800">
+                        <td className="px-4 py-3 text-right tabular-nums text-slate-800">
                           {row.computedCost != null ? row.computedCost.toFixed(2) : "-"}
                         </td>
-
-                        <td className="px-6 py-3 text-right tabular-nums text-slate-800">
+                        <td className="px-4 py-3 text-right tabular-nums text-slate-800">
                           {row.marginAmount != null ? row.marginAmount.toFixed(2) : "-"}
                         </td>
-
-                        <td className="px-6 py-3 text-right tabular-nums text-slate-800">
+                        <td className={"px-4 py-3 text-right tabular-nums " + marginClass}>
                           {row.marginPct != null ? `${row.marginPct.toFixed(1)}%` : "-"}
                         </td>
-
-                        <td className="px-6 py-3 text-slate-600">
+                        <td className="px-4 py-3 text-xs text-slate-600">
                           {row.missingIngredients.length > 0 ? (
-                            <span className="text-xs">
-                              {row.missingIngredients.join(", ")}
-                            </span>
+                            <span>{row.missingIngredients.join(", ")}</span>
                           ) : (
-                            <span className="text-emerald-700 text-xs font-medium">
+                            <span className="text-emerald-700">
                               All ingredients linked
                             </span>
                           )}
                         </td>
-
-                        <td className="px-6 py-3 text-center">
-                          {marginBadge(row.marginPct)}
-                        </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+
+                  {!loading && rows.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-6 text-center text-slate-500">
+                        No recipes or inventory data yet. Add inventory items and
+                        recipes to see profit analysis.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             )}
 
-            <div className="px-6 py-3 bg-sky-600 text-xs text-white rounded-xl">
-              Ingredients that don&apos;t match any inventory item by name are treated as
-              zero cost and listed under &quot;Missing Ingredients&quot;.
+            <div className="px-6 py-3 bg-sky-600 text-xs text-slate-700 rounded-xl">
+              Margin is calculated as (Menu Price – Sum of ingredient costs from
+              inventory). Ingredients that don&apos;t match any inventory item by
+              name are listed under &quot;Missing Ingredients&quot; and treated as
+              zero cost in this calculation.
             </div>
           </section>
         </TabsContent>
