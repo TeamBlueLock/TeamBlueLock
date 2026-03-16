@@ -34,7 +34,7 @@ export function LoginForm({
   // If already logged in, send user to dashboard
   useEffect(() => {
     if (session?.user) {
-      router.push("/dashboard/overview") // or "/profit-analysis" if you prefer
+      router.push("/dashboard/profit-analysis") // or "/profit-analysis" if you prefer
     }
   }, [session, router])
 
@@ -42,7 +42,7 @@ export function LoginForm({
   const handleGoogleLogin = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard/overview", // change to "/profit-analysis" if that's your default
+      callbackURL: "/dashboard/profit-analysis", // change to "/profit-analysis" if that's your default
     })
   }
 
