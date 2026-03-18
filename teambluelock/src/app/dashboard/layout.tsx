@@ -37,7 +37,6 @@ export default async function RootLayout({
               </div>
 
               <nav className="flex-1 px-2 py-4 space-y-1 text-sm">
-                <SidebarLink href="/dashboard/overview">Overview</SidebarLink>
                 <SidebarLink href="/dashboard/inventory">Inventory</SidebarLink>
                 <SidebarLink href="/dashboard/recipes">Recipes</SidebarLink>
                 <SidebarLink href="/dashboard/profit-analysis">Profit Analysis</SidebarLink>
@@ -73,7 +72,6 @@ export default async function RootLayout({
             </div>
 
             <nav className="flex-1 px-2 py-4 space-y-1 text-sm">
-              <SidebarLink href="/dashboard/overview">Overview</SidebarLink>
               <SidebarLink href="/dashboard/inventory">Inventory</SidebarLink>
               <SidebarLink href="/dashboard/recipes">Recipes</SidebarLink>
               <SidebarLink href="/dashboard/profit-analysis">Profit Analysis</SidebarLink>
