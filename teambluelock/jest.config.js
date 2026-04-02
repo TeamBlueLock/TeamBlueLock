@@ -8,14 +8,23 @@ const custom = {
   testEnvironment: "jsdom",
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
 
-  // IMPORTANT: pick the right one:
-  // If you have /src folder:
-  moduleNameMapper: { "^@/(.*)$": "<rootDir>/src/$1" },
-  // If you do NOT have /src folder, use:
-  // moduleNameMapper: { "^@/(.*)$": "<rootDir>/$1" },
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
 
   testMatch: ["**/?(*.)+(test).[tj]s?(x)"],
-  testPathIgnorePatterns: ["<rootDir>/tests/"], // ignores Playwright tests
+  testPathIgnorePatterns: ["<rootDir>/tests/"],
+
+  // This is the important fix for coverage
+  coverageProvider: "v8",
+
+  // Optional but helpful: only collect from your app code
+  collectCoverageFrom: [
+    "src/app/dashboard/inventory/page.tsx",
+    "src/app/dashboard/profit-analysis/page.tsx",
+    "src/app/dashboard/recipes/page.tsx",
+    "!**/*.d.ts",
+  ],
 };
 
 module.exports = createJestConfig(custom);

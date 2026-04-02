@@ -759,9 +759,6 @@ export default function InventoryPage() {
               {showForm ? "Cancel" : "Add Item"}
             </Button>
 
-            <Button>
-              Upload Reciept
-            </Button>
 
             <Button
               variant={showColumnModal ? "outline" : "default"}

@@ -529,10 +529,6 @@ export default function RecipesPage() {
             : "Add New Recipe"}
         </Button>
 
-        <Button>
-          Upload Recipes
-        </Button>
-
         </div>
       </header>
 
@@ -757,6 +753,7 @@ export default function RecipesPage() {
 
                       <div className="flex justify-end gap-2">
                         <Button
+                          type="button"
                           variant="ghost"
                           onClick={() => {
                             setPendingConversions([]);
@@ -769,6 +766,7 @@ export default function RecipesPage() {
                         </Button>
 
                         <Button
+                          type="button"
                           onClick={async () => {
                             try {
                               if (!activeConversion) return;
