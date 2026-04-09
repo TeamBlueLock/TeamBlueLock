@@ -19,7 +19,7 @@ export const UNITS: Record<string, UnitDefinition> = {
   L: { name: "L", category: "volume", toBase: 1000, baseUnit: "ml" },
   tsp: { name: "tsp", category: "volume", toBase: 4.92892, baseUnit: "ml" },
   tbsp: { name: "tbsp", category: "volume", toBase: 14.7868, baseUnit: "ml" },
-  fl_oz: { name: "fl_oz", category: "volume", toBase: 29.5735, baseUnit: "ml" },
+  fl_oz: { name: "fl oz", category: "volume", toBase: 29.5735, baseUnit: "ml" },
   cup: { name: "cup", category: "volume", toBase: 236.588, baseUnit: "ml" },
   gal: { name: "gal", category: "volume", toBase: 3785.41, baseUnit: "ml" },
 

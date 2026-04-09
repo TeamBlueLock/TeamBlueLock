@@ -101,42 +101,6 @@ export default function RecipesPage() {
     return true;
   }
 
-  // function canConvertWithExistingData(
-  //   recipeBaseUnit: string,
-  //   inventoryBaseUnit: string,
-  //   inventoryItem: InventoryItem
-  // ) {
-  //   const recipeCategory = getUnitCategory(recipeBaseUnit);
-  //   const inventoryCategory = getUnitCategory(inventoryBaseUnit);
-
-  //   // count ↔ mass
-  //   if (
-  //     (recipeCategory === "count" && inventoryCategory === "mass") ||
-  //     (recipeCategory === "mass" && inventoryCategory === "count")
-  //   ) {
-  //     return !!inventoryItem.gramsPerPiece;
-  //   }
-
-  //   // volume ↔ mass
-  //   if (
-  //     (recipeCategory === "volume" && inventoryCategory === "mass") ||
-  //     (recipeCategory === "mass" && inventoryCategory === "volume")
-  //   ) {
-  //     return !!inventoryItem.gramsPerMl;
-  //   }
-
-  //   // count ↔ volume
-  //   if (
-  //     (recipeCategory === "count" && inventoryCategory === "volume") ||
-  //     (recipeCategory === "volume" && inventoryCategory === "count")
-  //   ) {
-  //     return !!inventoryItem.mlPerPiece;
-  //   }
-
-  //   return false;
-  // }
-
-
   // NEW: track edit vs create
   const [editingId, setEditingId] = useState<string | null>(null);
   const isEditMode = !!editingId;
@@ -509,24 +473,18 @@ export default function RecipesPage() {
         <h2 className="text-3xl text-sky-600 font-semibold">Recipes</h2>
           <div className="flex items-center gap-2">
         <Button
+          variant={showForm ? "outline" : "default"}
           onClick={() => {
-            if (showForm && !isEditMode) {
-              // cancel creating new
-              resetForm();
-            } else if (showForm && isEditMode) {
-              // cancel editing
+            if (showForm) {
               resetForm();
             } else {
-              // open blank form to create
               setEditingId(null);
               setFormError(null);
               setShowForm(true);
             }
           }}
         >
-          {showForm
-            ? "Cancel"
-            : "Add New Recipe"}
+          {showForm ? "Cancel" : "Add New Recipe"}
         </Button>
 
         </div>
@@ -671,7 +629,7 @@ export default function RecipesPage() {
                           >
                             {units.map((unit) => (
                               <option key={unit} value={unit}>
-                                {unit}
+                                {UNITS[unit].name}
                               </option>
                             ))}
                           </optgroup>
@@ -808,17 +766,6 @@ export default function RecipesPage() {
                                 return;
                               }
 
-                              // Capture values first
-                              const nextIndex = activeConversionIndex + 1;
-
-                              // Close modal for current conversion immediately
-                              setActiveConversionIndex(nextIndex >= pendingConversions.length ? 0 : nextIndex);
-                              setConversionValue("");
-                              if (nextIndex >= pendingConversions.length) {
-                                setPendingConversions([]);
-                                setPendingIngredients(null);
-                              }
-
                               await fetch(`/api/inventory/${activeConversion.inventoryItem._id}`, {
                                 method: "PATCH",
                                 headers: { "Content-Type": "application/json" },
@@ -827,14 +774,12 @@ export default function RecipesPage() {
                                 }),
                               });
 
-                              // Reload inventory
-                              const res = await fetch("/api/inventory", { cache: "no-store" });
-                              const json = await res.json();
-                              setInventory(json.data);
+                              // Capture values first
+                              const nextIndex = activeConversionIndex + 1;
 
-                              // Move to next conversion OR finish
-                              if (activeConversionIndex < pendingConversions.length - 1) {
-                                setActiveConversionIndex(prev => prev + 1);
+                              // New Method below
+                              if (nextIndex < pendingConversions.length) {
+                                setActiveConversionIndex(nextIndex);
                                 setConversionValue("");
                               } else {
                                 // Done with all conversions
