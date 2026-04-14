@@ -89,6 +89,7 @@ interface Props {
 export function ManageColumnsModal({ columns, onToggle, setColumns }: Props) {
   const [showAddColumnForm, setShowAddColumnForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitFn, setSubmitFn] = useState<() => void>(() => () => {});
 
   async function handleAddColumn() {
     setLoading(true);
@@ -156,15 +157,23 @@ export function ManageColumnsModal({ columns, onToggle, setColumns }: Props) {
       {/* Add Column Section */}
       {showAddColumnForm ? (
         <div className="p-2 border rounded-md mt-3 bg-white">
-          <AddColumnForm onAdd={handleAddColumn} />
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowAddColumnForm(false)}
-            className="mt-2"
-          >
-            Cancel
-          </Button>
+          <AddColumnForm onAdd={handleAddColumn} setSubmit={setSubmitFn} />
+          <div className="flex justify-end gap-2 mt-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowAddColumnForm(false)}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={submitFn}
+            >
+              Add Column
+            </Button>
+          </div>
         </div>
       ) : (
         <Button
@@ -181,7 +190,7 @@ export function ManageColumnsModal({ columns, onToggle, setColumns }: Props) {
 }
 
 
-export function AddColumnForm({ onAdd }: { onAdd: () => void }) {
+export function AddColumnForm({ onAdd, setSubmit }: { onAdd: () => void,  setSubmit: (fn: () => void) => void }) {
   const [label, setLabel] = useState("");
   const [type, setType] = useState("text");
 
@@ -200,6 +209,10 @@ export function AddColumnForm({ onAdd }: { onAdd: () => void }) {
     onAdd();
     setLabel("");
   }
+
+  useEffect(() => {
+    setSubmit(() => handleSubmit);
+  }, [label, type]);
 
   return (
     <div className="space-y-3">
@@ -220,15 +233,6 @@ export function AddColumnForm({ onAdd }: { onAdd: () => void }) {
         <option value="date">Date</option>
         <option value="boolean">Yes / No</option>
       </select>
-
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={handleSubmit}
-        className="mt-1"
-      >
-        Add Column
-      </Button>
     </div>
   );
 
@@ -822,7 +826,7 @@ export default function InventoryPage() {
                     >
                       {groupedUnits[category].map((unit) => (
                         <option key={unit} value={unit}>
-                          {unit}
+                          {UNITS[unit].name}
                         </option>
                       ))}
                     </optgroup>
@@ -883,25 +887,77 @@ export default function InventoryPage() {
                 <h4 className="col-span-full text-xs font-medium text-slate-700 mt-4">
                   Custom Fields
                 </h4>
-
+                
                 {visibleCustomColumns.map(col => (
                   <div key={col.key} className="space-y-1">
                     <label className="text-xs text-slate-600">{col.label}</label>
-                    <input
-                      type={col.type === "date" ? "date" : "text"}
-                      value={itemForm.customFields?.[col.key] != null ? String(itemForm.customFields[col.key]) : ""}
-                      onChange={(e) =>
-                        setItemForm(prev => ({
-                          ...prev,
-                          customFields: {
-                            ...prev.customFields,
-                            [col.key]: e.target.value,
-                          },
-                        }))
-                      }
-                      className="w-full rounded-md border px-3 py-2 text-sm"
-                      placeholder={`Enter ${col.label}`}
-                    />
+
+                    {col.type === "number" ? (
+                      <input
+                        type="number"
+                        value={itemForm.customFields?.[col.key] != null ? String(itemForm.customFields[col.key]) : ""}
+                        onChange={(e) =>
+                          setItemForm(prev => ({
+                            ...prev,
+                            customFields: {
+                              ...prev.customFields,
+                              [col.key]: e.target.value,
+                            },
+                          }))
+                        }
+                        className="w-full rounded-md border px-3 py-2 text-sm"
+                        placeholder={`Enter ${col.label}`}
+                      />
+                    ) : col.type === "date" ? (
+                      <input
+                        type="date"
+                        value={itemForm.customFields?.[col.key] != null ? String(itemForm.customFields[col.key]) : ""}
+                        onChange={(e) =>
+                          setItemForm(prev => ({
+                            ...prev,
+                            customFields: {
+                              ...prev.customFields,
+                              [col.key]: e.target.value,
+                            },
+                          }))
+                        }
+                        className="w-full rounded-md border px-3 py-2 text-sm"
+                      />
+                    ) : col.type === "boolean" ? (
+                      <select
+                        value={itemForm.customFields?.[col.key] != null ? String(itemForm.customFields[col.key]) : ""}
+                        onChange={(e) =>
+                          setItemForm(prev => ({
+                            ...prev,
+                            customFields: {
+                              ...prev.customFields,
+                              [col.key]: e.target.value === "true",
+                            },
+                          }))
+                        }
+                        className="w-full rounded-md border px-3 py-2 text-sm"
+                      >
+                        <option value="">Select</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={itemForm.customFields?.[col.key] != null ? String(itemForm.customFields[col.key]) : ""}
+                        onChange={(e) =>
+                          setItemForm(prev => ({
+                            ...prev,
+                            customFields: {
+                              ...prev.customFields,
+                              [col.key]: e.target.value,
+                            },
+                          }))
+                        }
+                        className="w-full rounded-md border px-3 py-2 text-sm"
+                        placeholder={`Enter ${col.label}`}
+                      />
+                    )}
                   </div>
                 ))}
               </>
@@ -1062,7 +1118,9 @@ export default function InventoryPage() {
                       <tr className="hover:bg-slate-200 odd:bg-white even:bg-slate-50">
                         {/* CORE COLUMNS */}
                         <td className="px-6 py-3 text-slate-800">{item.name}</td>
-                        <td className="px-6 py-3 text-slate-600">{item.unit || "-"}</td>
+                        <td className="px-6 py-3 text-slate-600">
+                          {UNITS[item.unit]?.name || item.unit || "-"}
+                        </td>
                         <td className="px-6 py-3 text-right tabular-nums text-slate-800">
                           {stock}
                         </td>
@@ -1082,7 +1140,11 @@ export default function InventoryPage() {
                             key={col.key}
                             className="px-6 py-3 text-slate-600"
                           >
-                            {item.customFields?.[col.key] ?? "-"}
+                            {typeof item.customFields?.[col.key] === "boolean"
+                              ? item.customFields[col.key]
+                                ? "Yes"
+                                : "No"
+                              : item.customFields?.[col.key] ?? "-"}
                           </td>
                         ))}
 
