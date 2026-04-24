@@ -1008,6 +1008,14 @@ export default function RecipesPage() {
                                 }),
                               });
 
+                              setInventory((prev) =>
+                                  prev.map((item) =>
+                                    item._id === activeConversion.inventoryItem._id
+                                      ? { ...item, [fieldToUpdate]: parsed }
+                                      : item
+                                  )
+                                );
+
                               // Capture values first
                               const nextIndex = activeConversionIndex + 1;
 
