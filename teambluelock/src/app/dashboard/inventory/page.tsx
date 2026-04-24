@@ -86,10 +86,53 @@ interface Props {
   setColumns: React.Dispatch<React.SetStateAction<ColumnDefinition[]>>;
 }
 
+/**
+ * Renders the column management modal for inventory customization.
+ *
+ * This component displays all user-defined inventory columns and allows
+ * the user to toggle column visibility, delete existing custom columns,
+ * and open a form to create new columns. It works together with the
+ * parent inventory page by updating the shared column state.
+ *
+ * @returns A React element representing the column management interface.
+ *
+ * @example
+ * // Example usage:
+ * <ManageColumnsModal
+ *   columns={columns}
+ *   onToggle={toggleColumn}
+ *   setColumns={setColumns}
+ * />
+ *
+ * @example
+ * // Example behavior:
+ * // Displays all custom columns and allows the user to hide, show,
+ * // delete, or add new columns.
+ */
+
 export function ManageColumnsModal({ columns, onToggle, setColumns }: Props) {
   const [showAddColumnForm, setShowAddColumnForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitFn, setSubmitFn] = useState<() => void>(() => () => {});
+
+    /**
+   * Reloads column definitions after a new custom column is created.
+   *
+   * This function fetches the latest column definitions from the server,
+   * updates the parent column state, and closes the add-column form after
+   * a successful refresh.
+   *
+   * @returns A promise that resolves when the column list has been refreshed.
+   *
+   * @example
+   * // Example behavior:
+   * // After a user creates a new column, this function refreshes the
+   * // visible column list and hides the add-column form.
+   *
+   * @example
+   * // Example result:
+   * // The new column appears immediately in the manage columns modal.
+   */
 
   async function handleAddColumn() {
     setLoading(true);
@@ -105,6 +148,26 @@ export function ManageColumnsModal({ columns, onToggle, setColumns }: Props) {
       setLoading(false);
     }
   }
+
+  /**
+   * Deletes a custom column definition after user confirmation.
+   *
+   * This function prompts the user for confirmation, sends a DELETE request
+   * to remove the selected custom column, and updates local state so the UI
+   * immediately reflects the change.
+   *
+   * @returns A promise that resolves when the column has been deleted
+   * and removed from local state.
+   *
+   * @example
+   * // Example behavior:
+   * // If the user confirms deletion, the selected custom column is
+   * // removed from the database and no longer appears in the UI.
+   *
+   * @example
+   * // Example usage:
+   * handleDeleteColumn("expiration_date");
+   */
 
   async function handleDeleteColumn(key: string) {
     const confirmed = window.confirm(
@@ -189,10 +252,51 @@ export function ManageColumnsModal({ columns, onToggle, setColumns }: Props) {
   );
 }
 
+/**
+ * Renders a form for creating a new custom inventory column.
+ *
+ * This component allows the user to enter a column label and choose a
+ * column type. It generates a normalized key from the label, submits the
+ * new column definition to the server, and notifies the parent component
+ * after the column has been added successfully.
+ *
+ * @returns A React element representing the add-column form.
+ *
+ * @example
+ * // Example usage:
+ * <AddColumnForm onAdd={handleAddColumn} setSubmit={setSubmitFn} />
+ *
+ * @example
+ * // Example behavior:
+ * // A label such as "Expiration Date" becomes the key "expiration_date"
+ * // before being submitted to the API.
+ */
 
 export function AddColumnForm({ onAdd, setSubmit }: { onAdd: () => void,  setSubmit: (fn: () => void) => void }) {
   const [label, setLabel] = useState("");
   const [type, setType] = useState("text");
+
+  /**
+   * Submits a new custom column definition to the server.
+   *
+   * This function generates a normalized key from the user-entered label,
+   * sends the new column definition to the columns API, triggers the parent
+   * refresh callback, and clears the local form state after submission.
+   *
+   * @returns A promise that resolves when the new column has been created.
+   *
+   * @example
+   * // Example input:
+   * // label = "Expiration Date", type = "date"
+   *
+   * @example
+   * // Example API payload:
+   * {
+   *   "key": "expiration_date",
+   *   "label": "Expiration Date",
+   *   "type": "date"
+   * }
+   */
 
   async function handleSubmit() {
     const key = label
@@ -238,6 +342,24 @@ export function AddColumnForm({ onAdd, setSubmit }: { onAdd: () => void,  setSub
 
 }
 
+/**
+ * Determines the inventory status label for a given item.
+ *
+ * This function evaluates the current stock level of an inventory item
+ * relative to its reorder point and returns a status string used by the UI.
+ * The possible results are "Unavailable", "Reorder", "Low", or "In Stock".
+ *
+ * @returns A status label representing the item's current stock condition.
+ *
+ * @example
+ * // Example output:
+ * // If inStock is 0, returns "Unavailable"
+ *
+ * @example
+ * // Example output:
+ * // If inStock is greater than reorderPoint, returns "In Stock"
+ */
+
 function getStatus(item: InventoryItem) {
   const stock = item.inStock ?? 0;
   const reorder = item.reorderPoint ?? 0;
@@ -250,6 +372,26 @@ function getStatus(item: InventoryItem) {
     }
   return "In Stock";
 }
+
+/**
+ * Returns the Tailwind CSS class string for a given inventory status.
+ *
+ * This function maps inventory status values to pre-defined style classes
+ * so that each status badge is displayed with consistent colors and styling
+ * in the inventory table.
+ *
+ * @returns A string of CSS utility classes for rendering the status badge.
+ *
+ * @example
+ * // Example output:
+ * getStatusClasses("Unavailable")
+ * // returns red badge classes
+ *
+ * @example
+ * // Example output:
+ * getStatusClasses("In Stock")
+ * // returns green badge classes
+ */
 
 function getStatusClasses(status: InventoryStatus) {
   switch (status) {
@@ -265,6 +407,27 @@ function getStatusClasses(status: InventoryStatus) {
   }
 }
 
+
+/**
+ * Returns the value used to sort an inventory item by a given column key.
+ *
+ * This function supports sorting both built-in inventory fields and
+ * user-defined custom fields. It also handles computed values such as
+ * total inventory value and stock status priority.
+ *
+ * @returns A sortable value derived from the provided item and column key.
+ *
+ * @example
+ * // Example output:
+ * getSortableValue(item, "totalValue")
+ * // returns inStock * unitCost
+ *
+ * @example
+ * // Example output:
+ * getSortableValue(item, "status")
+ * // returns the numeric priority for the item's status
+ */
+
 function getSortableValue(item: InventoryItem, key: string) {
   switch (key) {
     case "totalValue":
@@ -278,6 +441,27 @@ function getSortableValue(item: InventoryItem, key: string) {
         : item.customFields?.[key];
   }
 }
+
+/**
+ * Renders the main inventory dashboard page.
+ *
+ * This page allows users to manage inventory items, including creating,
+ * editing, deleting, sorting, and quickly updating stock quantities and
+ * costs. It also supports user-defined custom columns and calculates
+ * summary values such as estimated total inventory value.
+ *
+ * @returns A React element representing the inventory dashboard page.
+ *
+ * @example
+ * // Example behavior:
+ * // Displays a table of inventory items with sorting, custom columns,
+ * // edit controls, and quick update actions.
+ *
+ * @example
+ * // Example result:
+ * // Users can add a new item, adjust stock levels, manage custom columns,
+ * // and view total inventory value from a single page.
+ */
 
 
 export default function InventoryPage() {
@@ -303,6 +487,24 @@ export default function InventoryPage() {
   const [showColumnModal, setShowColumnModal] = useState(false);
 
   const [columns, setColumns] = useState<ColumnDefinition[]>([]);
+
+  /**
+   * Updates the visibility state of a custom column.
+   *
+   * This function sends a PATCH request to the columns API to persist
+   * the new visibility state, then updates local column state so the UI
+   * reflects the change immediately.
+   *
+   * @returns A promise that resolves when the visibility update is complete.
+   *
+   * @example
+   * // Example usage:
+   * toggleColumn("supplier", false);
+   *
+   * @example
+   * // Example behavior:
+   * // Hides the "supplier" custom column from the inventory table.
+   */
 
   async function toggleColumn(key: string, visible: boolean) {
     await fetch("/api/columns", {
@@ -369,6 +571,23 @@ export default function InventoryPage() {
     init();
   }, []);
 
+  /**
+   * Updates the current table sort configuration.
+   *
+   * This function toggles the sort direction when the same column is clicked
+   * repeatedly, or applies ascending sorting when a new column is selected.
+   *
+   * @returns No return value. Updates sort state for the inventory table.
+   *
+   * @example
+   * // Example usage:
+   * handleSort("name");
+   *
+   * @example
+   * // Example behavior:
+   * // First click sorts by name ascending, second click sorts by name descending.
+   */
+
   function handleSort(key: string) {
     setSortConfig(prev => {
       if (prev.key === key) {
@@ -380,6 +599,25 @@ export default function InventoryPage() {
       return { key, direction: "asc" };
     });
   }
+
+  /**
+   * Loads inventory data for the authenticated user.
+   *
+   * This function fetches the latest inventory items from the inventory API,
+   * updates page state with the returned data, and manages the loading state
+   * while the request is in progress.
+   *
+   * @returns A promise that resolves when inventory data has been loaded.
+   *
+   * @example
+   * // Example behavior:
+   * // Fetches /api/inventory and stores the result in local state.
+   *
+   * @example
+   * // Example result:
+   * // The inventory table updates with the latest saved items.
+   */
+
 
   async function loadInventoryData() {
     setLoading(true);
@@ -425,7 +663,23 @@ export default function InventoryPage() {
     });
   }, [items, sortConfig]);
 
-  // Form handlers
+  /**
+   * Updates a field in the inventory item form state.
+   *
+   * This function is used by the create and edit form inputs to keep
+   * form state synchronized with the user’s current input.
+   *
+   * @returns No return value. Updates the inventory item form state.
+   *
+   * @example
+   * // Example usage:
+   * handleInputChange("name", "Flour");
+   *
+   * @example
+   * // Example result:
+   * // The item form's name field becomes "Flour".
+   */
+  
   function handleInputChange(field: keyof ItemForm, value: string) {
     setItemForm((prev) => ({ ...prev, [field]: value }));
   }
@@ -434,7 +688,23 @@ export default function InventoryPage() {
     setQuickUpdateForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  // Reset all forms
+  /**
+   * Resets all inventory page form state to default values.
+   *
+   * This function clears the create/edit form, quick update form, error state,
+   * and editing state so the page returns to its default interaction state.
+   *
+   * @returns No return value. Resets local form and modal-related state.
+   *
+   * @example
+   * // Example behavior:
+   * // Clears the current form after a successful save.
+   *
+   * @example
+   * // Example behavior:
+   * // Cancels edit mode and hides any open quick update form.
+   */
+
   function resetForms() {
     setItemForm({
       name: "",
@@ -456,7 +726,25 @@ export default function InventoryPage() {
     setShowQuickUpdate(null);
   }
 
-  // Load item for editing
+  /**
+   * Loads an inventory item into the form for editing.
+   *
+   * This function fetches a single inventory item by ID, populates the
+   * item form with its existing values, enables edit mode, and scrolls
+   * the page to the form so the user can update the item.
+   *
+   * @returns A promise that resolves when the item has been loaded
+   * into the edit form.
+   *
+   * @example
+   * // Example usage:
+   * handleEditClick("661f2b8e1234567890abcd12");
+   *
+   * @example
+   * // Example behavior:
+   * // Opens the form with the selected item's current values pre-filled.
+   */
+
   async function handleEditClick(id: string) {
     try {
       const res = await fetch(`/api/inventory/${id}`, { cache: "no-store" });
@@ -493,7 +781,25 @@ export default function InventoryPage() {
     }
   }
 
-  // Handle quick update
+  /**
+   * Applies a quick stock and cost update to an inventory item.
+   *
+   * This function validates the quick update form, calculates the new stock
+   * quantity and optional updated unit cost, sends a PATCH request to the
+   * inventory API, and updates local state so the table reflects the change
+   * immediately.
+   *
+   * @returns A promise that resolves when the inventory item has been updated.
+   *
+   * @example
+   * // Example usage:
+   * handleQuickUpdateSubmit("661f2b8e1234567890abcd12");
+   *
+   * @example
+   * // Example behavior:
+   * // Adds or subtracts stock quantity and optionally updates the item's cost.
+   */
+
   async function handleQuickUpdateSubmit(itemId: string) {
     const quantityToAdd = parseFloat(quickUpdateForm.quantityToAdd || "0");
     const newUnitCost = parseFloat(quickUpdateForm.newUnitCost || "0");
@@ -544,7 +850,25 @@ export default function InventoryPage() {
     }
   }
 
-  // Handle full form submit (create or update)
+  /**
+   * Handles submission of the inventory item form.
+   *
+   * This function validates user input, builds the request payload, and either
+   * creates a new inventory item or updates an existing one depending on whether
+   * the page is currently in edit mode. After a successful save, it updates local
+   * inventory state and resets the form.
+   *
+   * @returns A promise that resolves when the inventory item has been saved.
+   *
+   * @example
+   * // Example behavior:
+   * // Creates a new inventory item when no editing ID is active.
+   *
+   * @example
+   * // Example behavior:
+   * // Updates the selected inventory item when edit mode is enabled.
+   */
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setFormError(null);
@@ -632,7 +956,24 @@ export default function InventoryPage() {
     }
   }
 
-  // Handle delete
+    /**
+   * Deletes an inventory item after user confirmation.
+   *
+   * This function prompts the user for confirmation, sends a DELETE request
+   * to the inventory API, removes the deleted item from local state, and
+   * resets the edit form if the deleted item was currently being edited.
+   *
+   * @returns A promise that resolves when the item has been deleted.
+   *
+   * @example
+   * // Example usage:
+   * handleDelete("661f2b8e1234567890abcd12");
+   *
+   * @example
+   * // Example behavior:
+   * // Removes the selected item from the table after a successful deletion.
+   */
+
   async function handleDelete(id: string) {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this inventory item? This action cannot be undone."
@@ -660,7 +1001,25 @@ export default function InventoryPage() {
     }
   }
 
-  // Render quick update form
+    /**
+   * Renders the quick update form for a selected inventory item.
+   *
+   * This function conditionally displays an inline form that allows the user
+   * to quickly adjust stock quantity and unit cost for a specific item without
+   * opening the full edit form.
+   *
+   * @returns A table row element containing the quick update form, or `null`
+   * if the selected item is not currently in quick update mode.
+   *
+   * @example
+   * // Example behavior:
+   * // Returns a quick update row when the item is selected for update.
+   *
+   * @example
+   * // Example behavior:
+   * // Returns null when the quick update form is closed.
+   */
+  
   function renderQuickUpdateForm(item: InventoryItem) {
     if (showQuickUpdate !== item._id) return null;
 
