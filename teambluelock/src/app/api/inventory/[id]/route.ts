@@ -6,6 +6,44 @@ import { Types } from 'mongoose';
 import { convertToBase } from '@/lib/unitConversion';
 import { UNITS } from '@/lib/units';
 
+
+/**
+ * Handles a GET request to retrieve a specific inventory item.
+ *
+ * This endpoint validates the current user session, extracts the inventory item
+ * ID from the route parameters, connects to the database, and retrieves the
+ * matching inventory item that belongs to the authenticated user. If the item
+ * does not exist or does not belong to the current user, the endpoint returns
+ * a not found response.
+ *
+ * @returns A JSON response containing the requested inventory item on success,
+ * or an error message if the user is unauthorized, the item is not found, or
+ * the request fails.
+ *
+ * @example
+ * // Example successful response:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "_id": "661f2b8e1234567890abcd12",
+ *     "userId": "user_123",
+ *     "name": "Flour",
+ *     "unit": "lb",
+ *     "unitCost": 4.5,
+ *     "inStock": 10,
+ *     "reorderPoint": 2
+ *   }
+ * }
+ *
+ * @example
+ * // Example error response:
+ * {
+ *   "success": false,
+ *   "error": "Item not found"
+ * }
+ */
+
+
 // GET a specific inventory item
 export async function GET(
   request: NextRequest,
@@ -44,6 +82,45 @@ export async function GET(
     );
   }
 }
+
+/**
+ * Handles a PUT request to fully update a specific inventory item.
+ *
+ * This endpoint validates the current user session, reads the inventory item ID
+ * from the route parameters, parses the request body, validates the provided
+ * unit, recalculates the base unit and cost per base unit, and replaces the
+ * editable fields of the matching inventory item. The update only succeeds if
+ * the item belongs to the authenticated user.
+ *
+ * @returns A JSON response containing the updated inventory item on success,
+ * or an error message if the user is unauthorized, the unit is invalid, the
+ * item is not found, or the request fails.
+ *
+ * @example
+ * // Example successful response:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "_id": "661f2b8e1234567890abcd12",
+ *     "name": "Sugar",
+ *     "unit": "kg",
+ *     "unitCost": 8,
+ *     "inStock": 15,
+ *     "reorderPoint": 3,
+ *     "baseUnit": "g",
+ *     "costPerBaseUnit": 0.008,
+ *     "customFields": {}
+ *   }
+ * }
+ *
+ * @example
+ * // Example error response:
+ * {
+ *   "success": false,
+ *   "error": "Invalid unit"
+ * }
+ */
+
 
 // PUT - Full update of inventory item
 export async function PUT(
@@ -114,6 +191,42 @@ export async function PUT(
     );
   }
 }
+
+
+/**
+ * Handles a PATCH request to partially update a specific inventory item.
+ *
+ * This endpoint validates the current user session, reads the inventory item ID
+ * from the route parameters, and updates only the fields provided in the request
+ * body. If the unit is updated, the endpoint also validates the new unit and
+ * recalculates the base unit and cost per base unit. This is useful for quick
+ * edits such as adjusting stock quantity, cost, or selected custom fields
+ * without replacing the entire inventory item record.
+ *
+ * @returns A JSON response containing the updated inventory item on success,
+ * or an error message if the user is unauthorized, the unit is invalid, the
+ * item is not found, or the request fails.
+ *
+ * @example
+ * // Example successful response:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "_id": "661f2b8e1234567890abcd12",
+ *     "name": "Flour",
+ *     "inStock": 20,
+ *     "unitCost": 5.25
+ *   }
+ * }
+ *
+ * @example
+ * // Example error response:
+ * {
+ *   "success": false,
+ *   "error": "Item not found or unauthorized"
+ * }
+ */
+
 
 // PATCH - Partial update (for quick quantity/cost updates)
 export async function PATCH(
@@ -205,6 +318,33 @@ export async function PATCH(
     );
   }
 }
+
+/**
+ * Handles a DELETE request to remove a specific inventory item.
+ *
+ * This endpoint validates the current user session, reads the inventory item ID
+ * from the route parameters, connects to the database, and deletes the matching
+ * inventory item only if it belongs to the authenticated user. If no matching
+ * item is found, the endpoint returns a not found response.
+ *
+ * @returns A JSON response confirming successful deletion, or an error message
+ * if the user is unauthorized, the item is not found, or the request fails.
+ *
+ * @example
+ * // Example successful response:
+ * {
+ *   "success": true,
+ *   "message": "Item deleted successfully"
+ * }
+ *
+ * @example
+ * // Example error response:
+ * {
+ *   "success": false,
+ *   "error": "Item not found or unauthorized"
+ * }
+ */
+
 
 // DELETE - Remove inventory item
 export async function DELETE(

@@ -4,71 +4,54 @@ import { Recipe } from '@/models/recipe';
 import { auth } from '@/lib/auth'
 
 /**
-* Creates a new recipe in the database
-*
-* This endpoint accepts complete recipe data including name, description, 
-* ingredients with costs, instructions, and financial calculations. 
-* It creates a new recipe document with embedded ingredient data and 
-* automatically calculated timestamps.
-*
-* @param {NextRequest} request - The incoming request containing recipe data in JSON format
-* @returns {Promise<NextResponse>} Returns the created recipe object or an error message
-*
-* @example
-* // Request body:
-* {
-*   "name": "Chocolate Chip Cookies",
-*   "description": "Classic homemade chocolate chip cookies",
-*   "ingredients": [
-*     {
-*       "name": "Flour",
-*       "quantity": 2.5,
-*       "unit": "cups",
-*       "cost": 1.50
-*     },
-*     {
-*       "name": "Chocolate Chips",
-*       "quantity": 2,
-*       "unit": "cups",
-*       "cost": 3.00
-*     }
-*   ],
-*   "instructions": [
-*     "Preheat oven to 375°F",
-*     "Mix dry ingredients",
-*     "Cream butter and sugar"
-*   ],
-*   "totalCost": 4.50,
-*   "menuPrice": 12.00,
-*   "grossMargin": 62.5
-* }
-*
-* @example
-* // Success response (201):
-* {
-*   "success": true,
-*   "data": {
-*     "_id": "507f1f77bcf86cd799439012",
-*     "name": "Chocolate Chip Cookies",
-*     "description": "Classic homemade chocolate chip cookies",
-*     "ingredients": [...],
-*     "instructions": [...],
-*     "totalCost": 4.50,
-*     "menuPrice": 12.00,
-*     "grossMargin": 62.5,
-*     "createdAt": "2023-10-26T10:00:00.000Z",
-*     "updatedAt": "2023-10-26T10:00:00.000Z",
-*     "__v": 0
-*   }
-* }
-*
-* @example
-* // Error response (400):
-* {
-*   "success": false,
-*   "error": "Recipe validation failed: name: Path `name` is required."
-* }
-*/
+ * Handles a POST request to create a new recipe.
+ *
+ * This endpoint validates the current user session, reads recipe data from the
+ * request body, and creates a new recipe associated with the authenticated user.
+ * The recipe includes general details such as name, description, category,
+ * subcategory, yield, ingredients, instructions, and pricing fields. If some
+ * optional financial fields are missing, default values are used.
+ *
+ * @returns A JSON response containing the newly created recipe on success,
+ * or an error message if the user is unauthorized or the request fails.
+ *
+ * @example
+ * // Example successful response:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "_id": "507f1f77bcf86cd799439012",
+ *     "userId": "user_123",
+ *     "name": "Chocolate Chip Cookies",
+ *     "description": "Classic homemade chocolate chip cookies",
+ *     "category": "Dessert",
+ *     "subCategory": "Cookies",
+ *     "yield": 24,
+ *     "ingredients": [
+ *       {
+ *         "name": "Flour",
+ *         "quantity": 2.5,
+ *         "unit": "cups",
+ *         "cost": 1.5
+ *       }
+ *     ],
+ *     "instructions": [
+ *       "Preheat oven to 375°F",
+ *       "Mix dry ingredients"
+ *     ],
+ *     "totalCost": 4.5,
+ *     "menuPrice": 12,
+ *     "grossMargin": 62.5
+ *   }
+ * }
+ *
+ * @example
+ * // Example error response:
+ * {
+ *   "success": false,
+ *   "error": "Unauthorized"
+ * }
+ */
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -109,63 +92,50 @@ export async function POST(request: NextRequest) {
 }
 
 /**
-* Retrieves all recipes from the database
-*
-* This endpoint fetches all recipe documents from the database, 
-* sorted by creation date in descending order (newest first). 
-* Returns complete recipe data including embedded ingredients, 
-* instructions, and cost calculations.
-*
-* @returns {Promise<NextResponse>} Returns an array of all recipes or an error message
-*
-* @example
-* // Success response (200):
-* {
-*   "success": true,
-*   "data": [
-*     {
-*       "_id": "507f1f77bcf86cd799439012",
-*       "name": "Chocolate Chip Cookies",
-*       "description": "Classic homemade chocolate chip cookies",
-*       "ingredients": [
-*         {
-*           "name": "Flour",
-*           "quantity": 2.5,
-*           "unit": "cups",
-*           "cost": 1.50,
-*           "_id": "507f1f77bcf86cd799439013"
-*         }
-*       ],
-*       "instructions": ["Preheat oven to 375°F", ...],
-*       "totalCost": 4.50,
-*       "menuPrice": 12.00,
-*       "grossMargin": 62.5,
-*       "createdAt": "2023-10-26T10:00:00.000Z",
-*       "updatedAt": "2023-10-26T10:00:00.000Z",
-*       "__v": 0
-*     },
-*     {
-*       "_id": "507f1f77bcf86cd799439014",
-*       "name": "Veggie Pizza",
-*       // ... other recipe fields
-*     }
-*   ]
-* }
-*
-* @example
-* // Error response (400):
-* {
-*   "success": false,
-*   "error": "Database connection failed"
-* }
-*
-* @example
-* // Empty response (200):
-* {
-*   "success": true,
-*   "data": []
-* }
-*/
+ * Handles a GET request to retrieve all recipes for the authenticated user.
+ *
+ * This endpoint validates the current user session, connects to the database,
+ * and retrieves all recipes associated with the authenticated user. The recipes
+ * are sorted by creation date in descending order so that the most recently
+ * created recipes appear first in the response.
+ *
+ * @returns A JSON response containing a list of recipes for the authenticated
+ * user on success, or an error message if the user is unauthorized or the
+ * request fails.
+ *
+ * @example
+ * // Example successful response:
+ * {
+ *   "success": true,
+ *   "data": [
+ *     {
+ *       "_id": "507f1f77bcf86cd799439012",
+ *       "userId": "user_123",
+ *       "name": "Chocolate Chip Cookies",
+ *       "description": "Classic homemade chocolate chip cookies",
+ *       "ingredients": [
+ *         {
+ *           "name": "Flour",
+ *           "quantity": 2.5,
+ *           "unit": "cups",
+ *           "cost": 1.5
+ *         }
+ *       ],
+ *       "instructions": ["Preheat oven to 375°F"],
+ *       "totalCost": 4.5,
+ *       "menuPrice": 12,
+ *       "grossMargin": 62.5
+ *     }
+ *   ]
+ * }
+ *
+ * @example
+ * // Example empty response:
+ * {
+ *   "success": true,
+ *   "data": []
+ * }
+ */
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });

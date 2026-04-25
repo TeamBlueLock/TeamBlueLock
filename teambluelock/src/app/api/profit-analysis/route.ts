@@ -5,6 +5,49 @@ import { Recipe } from "@/models/recipe";
 import { InventoryItem } from "@/models/inventory";
 import { convertToBase, getUnitCategory } from "@/lib/unitConversion";
 
+/**
+ * Handles a GET request to generate profit analysis data for the authenticated user.
+ *
+ * This endpoint validates the current user session, retrieves all recipes and
+ * inventory items associated with the authenticated user, and calculates the
+ * estimated ingredient cost for each recipe. It matches recipe ingredients to
+ * inventory items by name, converts ingredient quantities into compatible base
+ * units, and supports additional conversions between count, mass, and volume
+ * when conversion helper values such as grams per piece, grams per milliliter,
+ * or milliliters per piece are available. The endpoint then calculates each
+ * recipe’s computed cost, margin amount, margin percentage, and tracks any
+ * missing ingredients that could not be matched in inventory.
+ *
+ * @returns A JSON response containing an array of profit analysis results for
+ * each recipe on success, or an error message if the user is unauthorized or
+ * the request fails.
+ *
+ * @example
+ * // Example successful response:
+ * {
+ *   "success": true,
+ *   "data": [
+ *     {
+ *       "recipeId": "507f1f77bcf86cd799439012",
+ *       "name": "Chocolate Chip Cookies",
+ *       "category": "Dessert",
+ *       "subCategory": "Cookies",
+ *       "menuPrice": 12,
+ *       "computedCost": 4.5,
+ *       "marginAmount": 7.5,
+ *       "marginPct": 62.5,
+ *       "missingIngredients": []
+ *     }
+ *   ]
+ * }
+ *
+ * @example
+ * // Example error response:
+ * {
+ *   "success": false,
+ *   "error": "Unauthorized"
+ * }
+ */
 
 export async function GET(request: NextRequest) {
   try {

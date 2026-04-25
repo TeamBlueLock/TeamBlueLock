@@ -29,9 +29,49 @@ type AnalysisRow = {
   missingIngredients: string[];
 };
 
+/**
+ * Formats a numeric value as a U.S. dollar currency string.
+ *
+ * This helper converts a number into a localized currency string for display
+ * in the profit analysis dashboard. It is used for margin amounts, prices,
+ * and other monetary values shown in cards, charts, and tables.
+ *
+ * @returns A formatted currency string in U.S. dollars.
+ *
+ * @example
+ * // Example output:
+ * money(12.5)
+ * // "$12.50"
+ *
+ * @example
+ * // Example output:
+ * money(1234.56)
+ * // "$1,234.56"
+ */
+
 function money(n: number) {
   return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
 }
+
+/**
+ * Returns a badge component representing the margin performance level.
+ *
+ * This helper maps a recipe's margin percentage to a styled badge used in
+ * the profit analysis dashboard. It labels recipes as "Low", "OK", "Great",
+ * or "N/A" depending on the margin percentage value.
+ *
+ * @returns A badge React element representing the recipe's margin category.
+ *
+ * @example
+ * // Example output:
+ * marginBadge(35)
+ * // returns a "Low" badge
+ *
+ * @example
+ * // Example output:
+ * marginBadge(null)
+ * // returns an "N/A" badge
+ */
 
 function marginBadge(marginPct: number | null) {
   if (marginPct == null) return <Badge variant="secondary">N/A</Badge>;
@@ -40,11 +80,50 @@ function marginBadge(marginPct: number | null) {
   return <Badge className="bg-emerald-100 text-emerald-800">Great</Badge>;
 }
 
+/**
+ * Renders the main profit analysis dashboard page.
+ *
+ * This page loads recipe profitability data from the profit analysis API,
+ * displays KPI summary cards, renders charts for category and margin trends,
+ * and provides a sortable table of recipe-level margin details. It helps
+ * users identify low-margin recipes, missing ingredient links, and strong
+ * performers across categories.
+ *
+ * @returns A React element representing the profit analysis dashboard.
+ *
+ * @example
+ * // Example behavior:
+ * // Loads recipe margin data and displays overview metrics and charts.
+ *
+ * @example
+ * // Example result:
+ * // Users can switch between overview and table views to inspect profitability.
+ */
+
 export default function ProfitAnalysisPage() {
   const [rows, setRows] = useState<AnalysisRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+
+    /**
+     * Loads profit analysis data for the authenticated user.
+     *
+     * This function fetches recipe profitability data from the profit analysis
+     * API, stores the returned rows in local state, and manages the page loading
+     * state while the request is in progress.
+     *
+     * @returns A promise that resolves when profit analysis data has been loaded.
+     *
+     * @example
+     * // Example behavior:
+     * // Fetches /api/profit-analysis and stores the result in local state.
+     *
+     * @example
+     * // Example result:
+     * // The dashboard updates with recipe margins, costs, and missing ingredient data.
+     */
+
     async function loadAnalysis() {
       setLoading(true);
       try {
@@ -66,6 +145,25 @@ export default function ProfitAnalysisPage() {
     key: keyof AnalysisRow | null;
     direction: SortDirection;
   }>({ key: null, direction: "asc" });
+
+  /**
+   * Updates the sort configuration for the profit analysis table.
+   *
+   * This function toggles the sort direction when the same column is selected
+   * repeatedly, or applies ascending sorting when a new column is chosen.
+   * It is used to sort recipe analysis rows by fields such as name, category,
+   * computed cost, menu price, or margin values.
+   *
+   * @returns No return value. Updates the local sort state for the table.
+   *
+   * @example
+   * // Example usage:
+   * handleSort("name");
+   *
+   * @example
+   * // Example behavior:
+   * // First click sorts by name ascending, second click sorts by name descending.
+   */
 
   function handleSort(key: keyof AnalysisRow) {
     setSortConfig((prev) => {

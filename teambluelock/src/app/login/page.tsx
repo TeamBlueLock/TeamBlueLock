@@ -2,6 +2,26 @@ import { LoginForm } from "@/components/ui/login-form"
 import Link from "next/link"
 import Image from "next/image"
 
+/**
+ * Renders the login page for the TeamBlueLock application.
+ *
+ * This page displays the application logo, a brief description, and a login
+ * form that allows users to authenticate and access the dashboard. It serves
+ * as the entry point for users before they navigate to protected routes such
+ * as inventory, recipes, and profit analysis.
+ *
+ * @returns A React element representing the login page UI, including branding,
+ * descriptive text, and the login form component.
+ *
+ * @example
+ * // Example behavior:
+ * // Displays the TeamBlueLock logo, title, and login form centered on the page.
+ *
+ * @example
+ * // Example result:
+ * // Users can enter credentials through the login form to access the dashboard.
+ */
+
 export default function Page() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-6 text-center">

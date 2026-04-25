@@ -45,6 +45,27 @@ type RecipeRow = {
   createdAt?: string;
 };
 
+/**
+ * Renders the main recipes dashboard page.
+ *
+ * This page allows users to create, edit, delete, and sort recipes while
+ * pulling ingredient options from inventory. It also validates ingredient
+ * units against inventory units and prompts the user for conversion values
+ * when a recipe ingredient cannot be directly matched to the inventory item’s
+ * base measurement.
+ *
+ * @returns A React element representing the recipes dashboard page.
+ *
+ * @example
+ * // Example behavior:
+ * // Displays a recipe table along with a form for adding or editing recipes.
+ *
+ * @example
+ * // Example result:
+ * // Users can save recipes, sort recipe rows, and handle ingredient
+ * // conversion mismatches from the same page.
+ */
+
 export default function RecipesPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [recipes, setRecipes] = useState<RecipeRow[]>([]);
@@ -68,6 +89,28 @@ export default function RecipesPage() {
 
   const [conversionValue, setConversionValue] = useState<string>("");
   const [pendingIngredients, setPendingIngredients] = useState<any[] | null>(null);
+
+  /**
+   * Validates ingredient-to-inventory unit compatibility before saving a recipe.
+   *
+   * This function compares each cleaned recipe ingredient against the matching
+   * inventory item and checks whether their normalized base units are compatible.
+   * If any mismatches are found, it stores the pending ingredients and conversion
+   * prompts in state so the user can provide the missing conversion values before
+   * the recipe is saved.
+   *
+   * @returns A promise that resolves to `true` if all ingredients are compatible,
+   * or `false` if user input is required for one or more conversions.
+   *
+   * @example
+   * // Example result:
+   * // Returns true when all ingredient units match compatible inventory units.
+   *
+   * @example
+   * // Example result:
+   * // Returns false and opens the conversion workflow when a recipe ingredient
+   * // uses a unit that cannot be directly converted to the inventory base unit.
+   */
 
   async function validateAndCalculateCost(cleanedIngredients: any[]) {
     const mismatches: any[] = [];
@@ -107,6 +150,25 @@ export default function RecipesPage() {
 
   // Load inventory for ingredient dropdowns
   useEffect(() => {
+
+    /**
+     * Loads inventory items used as ingredient options in the recipe form.
+     *
+     * This function fetches inventory data from the API, stores the returned
+     * items in local state, and updates loading state while the request is
+     * in progress.
+     *
+     * @returns A promise that resolves when inventory data has been loaded.
+     *
+     * @example
+     * // Example behavior:
+     * // Fetches /api/inventory and stores the returned items in state.
+     *
+     * @example
+     * // Example result:
+     * // Ingredient dropdowns are populated with inventory item names.
+     */
+
     async function loadInventory() {
       setLoadingInventory(true);
       try {
@@ -125,6 +187,23 @@ export default function RecipesPage() {
 
   // Load existing recipes
   useEffect(() => {
+    /**
+     * Loads existing recipes for the authenticated user.
+     *
+     * This function fetches recipe data from the API, stores the returned
+     * recipes in local state, and manages loading state for the recipes table.
+     *
+     * @returns A promise that resolves when recipes have been loaded.
+     *
+     * @example
+     * // Example behavior:
+     * // Fetches /api/recipes and stores the result in local state.
+     *
+     * @example
+     * // Example result:
+     * // The recipes table is populated with the user's saved recipes.
+     */
+
     async function loadRecipes() {
       setLoadingRecipes(true);
       try {
@@ -140,6 +219,23 @@ export default function RecipesPage() {
     }
     loadRecipes();
   }, []);
+
+  /**
+   * Updates a field in a specific ingredient row of the recipe form.
+   *
+   * This function is used to keep the ingredient list synchronized with
+   * user input by updating the selected ingredient row and field.
+   *
+   * @returns No return value. Updates the ingredient form state.
+   *
+   * @example
+   * // Example usage:
+   * handleIngredientChange(0, "name", "Flour");
+   *
+   * @example
+   * // Example result:
+   * // The first ingredient row now has the name "Flour".
+   */
 
   function handleIngredientChange(
     index: number,
@@ -161,6 +257,22 @@ export default function RecipesPage() {
     direction: "asc",
   });
 
+  /**
+   * Updates the recipe table sort configuration.
+   *
+   * This function toggles the sort direction when the same column is selected
+   * repeatedly, or applies ascending sorting when a new column is chosen.
+   *
+   * @returns No return value. Updates sort state for the recipes table.
+   *
+   * @example
+   * // Example usage:
+   * handleSort("name");
+   *
+   * @example
+   * // Example behavior:
+   * // First click sorts by name ascending, second click sorts by name descending.
+   */
 
   function handleSort(key: keyof RecipeRow) {
     setSortConfig((prev) => {
@@ -178,15 +290,65 @@ export default function RecipesPage() {
     });
   }
 
+  /**
+   * Adds a new empty ingredient row to the recipe form.
+   *
+   * This function appends a blank ingredient entry so the user can add
+   * another ingredient to the current recipe.
+   *
+   * @returns No return value. Updates the ingredient list state.
+   *
+   * @example
+   * // Example behavior:
+   * // Adds a new row with empty name, unit, and quantity fields.
+   *
+   * @example
+   * // Example result:
+   * // The recipe form displays one additional ingredient input row.
+   */
+
   function addIngredientRow() {
     setIngredients((prev) => [...prev, { name: "", unit: "", quantity: "" }]);
   }
+
+  /**
+   * Removes an ingredient row from the recipe form.
+   *
+   * This function deletes the ingredient row at the specified index
+   * from the current list of recipe ingredients.
+   *
+   * @returns No return value. Updates the ingredient list state.
+   *
+   * @example
+   * // Example usage:
+   * removeIngredientRow(1);
+   *
+   * @example
+   * // Example result:
+   * // The second ingredient row is removed from the form.
+   */
 
   function removeIngredientRow(index: number) {
     setIngredients((prev) => prev.filter((_, i) => i !== index));
   }
 
-  // NEW: reset form (used when cancel or after save)
+  /**
+   * Resets the recipe form to its default state.
+   *
+   * This function clears all recipe form fields, resets validation errors,
+   * exits edit mode, and hides the form so the page returns to its default state.
+   *
+   * @returns No return value. Resets local recipe form state.
+   *
+   * @example
+   * // Example behavior:
+   * // Clears the form after a successful recipe save.
+   *
+   * @example
+   * // Example behavior:
+   * // Cancels editing and closes the recipe form.
+   */
+
   function resetForm() {
     setRecipeName("");
     setMenuPrice("");
@@ -198,7 +360,25 @@ export default function RecipesPage() {
     setShowForm(false);
   }
 
-  // NEW: start editing a recipe
+  /**
+   * Loads an existing recipe into the form for editing.
+   *
+   * This function fetches a recipe by ID, populates the form fields with
+   * its existing values, switches the page into edit mode, and scrolls
+   * the user to the top of the page so the form is immediately visible.
+   *
+   * @returns A promise that resolves when the recipe has been loaded
+   * into the edit form.
+   *
+   * @example
+   * // Example usage:
+   * handleEditClick("507f1f77bcf86cd799439012");
+   *
+   * @example
+   * // Example behavior:
+   * // Opens the form with the selected recipe's values pre-filled.
+   */
+
   async function handleEditClick(id: string) {
     setFormError(null);
     setIsSaving(false);
@@ -250,6 +430,24 @@ export default function RecipesPage() {
     }
   }
 
+  /**
+   * Deletes a recipe after user confirmation.
+   *
+   * This function prompts the user for confirmation, sends a DELETE request
+   * for the selected recipe, removes the recipe from local state, and resets
+   * the form if the deleted recipe was currently being edited.
+   *
+   * @returns A promise that resolves when the recipe has been deleted.
+   *
+   * @example
+   * // Example usage:
+   * handleDelete("507f1f77bcf86cd799439012");
+   *
+   * @example
+   * // Example behavior:
+   * // Removes the selected recipe from the table after successful deletion.
+   */
+
   async function handleDelete(id: string) {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this recipe? This action cannot be undone."
@@ -276,6 +474,25 @@ export default function RecipesPage() {
       alert("Failed to delete recipe: " + err.message);
     }
   }
+
+  /**
+   * Saves a recipe by either creating a new record or updating an existing one.
+   *
+   * This function builds the request payload from the current form state,
+   * determines whether the page is in create or edit mode, sends the
+   * appropriate API request, updates the recipes list in local state,
+   * and resets the form after a successful save.
+   *
+   * @returns A promise that resolves when the recipe has been saved.
+   *
+   * @example
+   * // Example behavior:
+   * // Sends a POST request when creating a new recipe.
+   *
+   * @example
+   * // Example behavior:
+   * // Sends a PUT request when editing an existing recipe.
+   */
 
   async function saveRecipe(cleanedIngredients: any[]) {
     const parsedMenuPrice = parseFloat(menuPrice || "0");
@@ -322,7 +539,24 @@ export default function RecipesPage() {
     resetForm();
   }
 
-
+  /**
+   * Handles submission of the recipe form.
+   *
+   * This function validates the recipe name, menu price, and ingredient list,
+   * normalizes ingredient values, checks for required unit conversions, and
+   * saves the recipe if all validation steps pass.
+   *
+   * @returns A promise that resolves when recipe submission has completed.
+   *
+   * @example
+   * // Example behavior:
+   * // Prevents submission if the recipe name is empty or invalid.
+   *
+   * @example
+   * // Example behavior:
+   * // Starts the conversion workflow if ingredient and inventory units do not match.
+   */
+  
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setFormError(null);
@@ -773,6 +1007,14 @@ export default function RecipesPage() {
                                   [fieldToUpdate]: parsed,
                                 }),
                               });
+
+                              setInventory((prev) =>
+                                  prev.map((item) =>
+                                    item._id === activeConversion.inventoryItem._id
+                                      ? { ...item, [fieldToUpdate]: parsed }
+                                      : item
+                                  )
+                                );
 
                               // Capture values first
                               const nextIndex = activeConversionIndex + 1;
